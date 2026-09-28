@@ -46,7 +46,10 @@ export function getUpiPaymentUri(options: {
  * Uses official Paytm Axis UPI ID: 9491803089@ptaxis
  * ₹50 for ISTE Members, ₹100 for Non-ISTE Participants
  */
-export async function generateWorkshopUpiQr(isIsteMember: boolean): Promise<{
+export async function generateWorkshopUpiQr(
+  isIsteMember: boolean,
+  customNote?: string
+): Promise<{
   dataUrl: string;
   upiUri: string;
   amount: number;
@@ -56,9 +59,9 @@ export async function generateWorkshopUpiQr(isIsteMember: boolean): Promise<{
   const upiId = "9491803089@ptaxis";
   const payeeName = "NBKRIST Paytm AI Workshop";
   const amount = isIsteMember ? 50 : 100;
-  const transactionNote = isIsteMember 
+  const transactionNote = customNote?.trim() || (isIsteMember 
     ? "P2P Workshop ISTE Fee" 
-    : "P2P Workshop Non-ISTE Fee";
+    : "P2P Workshop Non-ISTE Fee");
 
   const upiUri = getUpiPaymentUri({
     upiId,

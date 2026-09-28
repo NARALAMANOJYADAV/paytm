@@ -92,18 +92,30 @@ export default function RegisterPage() {
   // Fee calculation: ISTE = ₹50, Non-ISTE = ₹100
   const fee = isIsteMember ? 50 : 100;
 
-  // Generate dynamic UPI QR Code whenever ISTE status changes
+  // Dynamic UPI note: P2P<user name> <user mobile>
+  const [copiedNote, setCopiedNote] = useState<boolean>(false);
+  const dynamicUpiNote = `P2P ${name.trim() || "<user name>"} ${mobile.trim() || "<user mobile>"}`;
+
+  // Generate dynamic UPI QR Code whenever ISTE status, name, or mobile changes
   useEffect(() => {
-    generateWorkshopUpiQr(isIsteMember).then((res) => {
+    const note = `P2P ${name.trim()} ${mobile.trim()}`.trim();
+    generateWorkshopUpiQr(isIsteMember, note).then((res) => {
       setUpiQrDataUrl(res.dataUrl);
       setUpiPaymentUri(res.upiUri);
     });
-  }, [isIsteMember]);
+  }, [isIsteMember, name, mobile]);
 
   const handleCopyUpi = () => {
     navigator.clipboard.writeText("9491803089@ptaxis");
     setCopiedUpi(true);
     setTimeout(() => setCopiedUpi(false), 2000);
+  };
+
+  const handleCopyNote = () => {
+    const note = `P2P ${name.trim()} ${mobile.trim()}`.trim();
+    navigator.clipboard.writeText(note);
+    setCopiedNote(true);
+    setTimeout(() => setCopiedNote(false), 2000);
   };
 
   // Validation
@@ -131,6 +143,28 @@ export default function RegisterPage() {
 
   // Step 2 -> 3: Razorpay Payment Simulation & Server Verification
   const handleInitiatePayment = () => {
+    // Validate mandatory UTR and check fraud / duplicate UTR
+    const cleanUtr = utrNumber.trim().toUpperCase();
+    if (!cleanUtr) {
+      setErrors({ utrNumber: "Transaction UTR / Reference No. is mandatory (*)" });
+      return;
+    }
+    if (cleanUtr.length < 8) {
+      setErrors({ utrNumber: "Please enter a valid 12-digit UPI UTR reference number" });
+      return;
+    }
+
+    const store = loadStore();
+    const isDuplicate = store.registrations.some(
+      (r) => r.utr_number && r.utr_number.trim().toUpperCase() === cleanUtr
+    );
+    if (isDuplicate) {
+      setErrors({
+        utrNumber: "FRAUD ALERT: This UTR has already been submitted for another registration! Only one-time UTR can be uploaded. Duplicate or re-used UTRs are strictly rejected."
+      });
+      return;
+    }
+
     setIsProcessingPayment(true);
 
     // Save preliminary registration in store
@@ -158,13 +192,14 @@ export default function RegisterPage() {
       const mockOrderId = `order_${Math.random().toString(36).substring(2, 9)}`;
       const mockSig = `sig_${Math.random().toString(36).substring(2, 12)}`;
 
-      // Complete payment & generate ticket on backend
+      // Complete payment & generate ticket on backend with UTR number
       completePaymentAndIssueTicket(registration.id, {
         razorpayOrderId: mockOrderId,
         razorpayPaymentId: mockPayId,
         razorpaySignature: mockSig,
         amount: fee,
         paymentMethod: activePaymentMethod === "upi" ? "UPI (GPay / PhonePe / Paytm)" : "Card / NetBanking",
+        utrNumber: cleanUtr,
       });
 
       setPaymentTransactionId(mockPayId);
@@ -700,11 +735,20 @@ export default function RegisterPage() {
                         ₹{fee}.00
                       </span>
                     </div>
-                    <div className="flex justify-between text-[11px]">
-                      <span className="text-slate-400">Note:</span>
-                      <span className="text-slate-300 truncate max-w-[180px]">
-                        {isIsteMember ? "P2P Workshop ISTE Fee" : "P2P Workshop Non-ISTE"}
-                      </span>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px] pt-1 border-t border-slate-800">
+                      <span className="text-slate-400 font-semibold">Payment Note:</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-mono text-cyan-300 font-bold bg-cyan-950/80 px-2 py-0.5 rounded border border-cyan-500/30 truncate max-w-[200px]">
+                          {dynamicUpiNote}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={handleCopyNote}
+                          className="flex-shrink-0 px-2 py-0.5 rounded bg-slate-900 border border-slate-700 hover:border-cyan-400 text-[10px] text-slate-300 font-medium transition-colors"
+                        >
+                          {copiedNote ? "Copied!" : "Copy"}
+                        </button>
+                      </div>
                     </div>
                   </div>
 
@@ -718,18 +762,45 @@ export default function RegisterPage() {
                     </a>
                   )}
 
-                  {/* UTR / Ref No Input (Optional) */}
+                  {/* Anti-Fraud UTR Alert Notice */}
+                  <div className="p-3 rounded-xl bg-amber-500/15 border border-amber-500/40 text-amber-300 text-xs space-y-1">
+                    <div className="flex items-center gap-1.5 font-bold text-amber-400">
+                      <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                      <span>Anti-Fraud Notice: One-Time UTR Upload Only</span>
+                    </div>
+                    <p className="text-[11px] text-amber-200/90 leading-relaxed">
+                      Frauds are actively detected. Only one-time UTR can be uploaded; any re-used or duplicate UTR number will be rejected and the registration blocked.
+                    </p>
+                  </div>
+
+                  {/* UTR / Ref No Input (Mandatory *) */}
                   <div className="space-y-1">
-                    <label className="block text-[11px] font-semibold text-slate-400">
-                      Transaction UTR / Reference No. (Optional)
+                    <label className="block text-[11px] font-bold text-slate-300">
+                      Transaction UTR / Reference No. <span className="text-rose-400">*</span>
                     </label>
                     <input
                       type="text"
-                      placeholder="e.g. 427819284910"
+                      placeholder="e.g. 427819284910 (12-digit UPI UTR)"
                       value={utrNumber}
-                      onChange={(e) => setUtrNumber(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs font-mono focus:border-cyan-400 focus:outline-none"
+                      onChange={(e) => {
+                        setUtrNumber(e.target.value);
+                        if (errors.utrNumber) {
+                          const nextErrs = { ...errors };
+                          delete nextErrs.utrNumber;
+                          setErrors(nextErrs);
+                        }
+                      }}
+                      className={`w-full px-3 py-2.5 rounded-xl bg-slate-950 border ${
+                        errors.utrNumber ? "border-rose-500 focus:border-rose-500" : "border-slate-700 focus:border-cyan-400"
+                      } text-white text-xs font-mono focus:outline-none transition-colors`}
+                      required
                     />
+                    {errors.utrNumber && (
+                      <p className="text-[11px] font-bold text-rose-400 flex items-center gap-1 mt-1 animate-in fade-in duration-150">
+                        <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                        <span>{errors.utrNumber}</span>
+                      </p>
+                    )}
                   </div>
                 </div>
 

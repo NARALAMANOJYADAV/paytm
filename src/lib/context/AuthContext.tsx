@@ -235,6 +235,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setCurrentTicket(null);
     setIsAuthenticated(false);
     localStorage.removeItem(AUTH_STORAGE_KEY);
+    if (typeof window !== "undefined") {
+      window.location.href = "/";
+    }
   };
 
   const quickSwitchRole = (newRole: UserRole) => {

@@ -61,6 +61,7 @@ export interface Registration {
   fee: number; // 50 or 100
   payment_status: PaymentStatus;
   registration_status: RegistrationStatus;
+  utr_number?: string;
   created_at: string;
 }
 
@@ -73,6 +74,7 @@ export interface Payment {
   amount: number;
   status: PaymentStatus;
   payment_method?: string;
+  utr_number?: string;
   created_at: string;
 }
 

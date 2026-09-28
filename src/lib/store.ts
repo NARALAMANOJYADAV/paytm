@@ -202,6 +202,46 @@ export function updateUserPassword(emailOrUserId: string, password: string): boo
 }
 
 /**
+ * Resets user password by finding user via Email, Phone number, or Roll Number
+ */
+export function resetPasswordByIdentifier(
+  identifier: string,
+  newPassword: string
+): { success: boolean; user?: User; error?: string } {
+  const store = loadStore();
+  const clean = identifier.trim().toLowerCase();
+  const cleanDigits = identifier.replace(/\D/g, "");
+
+  let user = store.users.find(
+    (u) => u.email.toLowerCase() === clean || u.id === identifier
+  );
+
+  if (!user && cleanDigits.length >= 10) {
+    user = store.users.find(
+      (u) => u.phone && u.phone.replace(/\D/g, "").includes(cleanDigits.slice(-10))
+    );
+  }
+
+  if (!user) {
+    const prof = store.profiles.find((p) => p.roll_number.toLowerCase() === clean);
+    if (prof) {
+      user = store.users.find((u) => u.id === prof.user_id);
+    }
+  }
+
+  if (!user) {
+    return {
+      success: false,
+      error: "No registered participant found with this Email, Phone, or Roll Number.",
+    };
+  }
+
+  user.password = newPassword;
+  saveStore(store);
+  return { success: true, user };
+}
+
+/**
  * Complete Payment and issue ticket
  */
 export function completePaymentAndIssueTicket(
@@ -212,6 +252,7 @@ export function completePaymentAndIssueTicket(
     razorpaySignature: string;
     amount: number;
     paymentMethod: string;
+    utrNumber?: string;
   }
 ): { payment: Payment; ticket: Ticket } {
   const store = loadStore();
@@ -224,6 +265,9 @@ export function completePaymentAndIssueTicket(
   const reg = store.registrations[regIndex];
   reg.payment_status = "success";
   reg.registration_status = "confirmed";
+  if (paymentDetails.utrNumber) {
+    reg.utr_number = paymentDetails.utrNumber.trim();
+  }
 
   const newPayment: Payment = {
     id: `pay-${Date.now()}`,
@@ -234,6 +278,7 @@ export function completePaymentAndIssueTicket(
     amount: paymentDetails.amount,
     status: "success",
     payment_method: paymentDetails.paymentMethod,
+    utr_number: paymentDetails.utrNumber?.trim(),
     created_at: new Date().toISOString(),
   };
 

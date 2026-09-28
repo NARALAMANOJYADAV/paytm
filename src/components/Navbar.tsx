@@ -112,10 +112,11 @@ export default function Navbar() {
               </Link>
               <button
                 onClick={() => logout()}
-                title="Sign Out"
-                className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-900 border border-slate-800 transition-colors"
+                title="Sign Out to Landing Page"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-slate-300 hover:text-rose-300 bg-slate-900 hover:bg-rose-950/40 border border-slate-800 hover:border-rose-500/40 text-xs font-bold transition-all active:scale-95"
               >
-                <LogOut className="w-4 h-4" />
+                <LogOut className="w-3.5 h-3.5 text-rose-400" />
+                <span>Sign Out</span>
               </button>
             </div>
           ) : (
