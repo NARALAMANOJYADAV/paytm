@@ -37,29 +37,29 @@ export default function BroadcastBanner() {
   const current = announcements[currentIndex];
 
   return (
-    <div className="relative bg-gradient-to-r from-blue-950 via-cyan-950 to-slate-950 text-cyan-200 border-b border-cyan-500/30 px-4 py-2.5 text-xs sm:text-sm z-50 shadow-md">
-      <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 flex-1 min-w-0">
+    <div className="relative bg-gradient-to-r from-blue-950 via-cyan-950 to-slate-950 text-cyan-200 border-b border-cyan-500/30 px-3 sm:px-4 py-1.5 sm:py-2 text-[11px] sm:text-xs z-50 shadow-md">
+      <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-3">
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-1 min-w-0">
           <span className="flex h-2 w-2 relative flex-shrink-0">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
           </span>
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 flex-shrink-0">
+          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] uppercase font-bold tracking-wider bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 flex-shrink-0">
             {current.priority === "urgent" ? (
               <>
-                <AlertCircle className="w-3 h-3 text-amber-400" />
-                Live Broadcast
+                <AlertCircle className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-amber-400" />
+                Live
               </>
             ) : (
               <>
-                <Megaphone className="w-3 h-3 text-cyan-400" />
-                Announcement
+                <Megaphone className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-cyan-400" />
+                Update
               </>
             )}
           </span>
-          <p className="truncate font-medium text-slate-100">
+          <p className="truncate font-medium text-slate-100 text-[11px] sm:text-xs">
             <strong className="text-cyan-300 mr-1.5">{current.title}</strong>
-            <span className="text-slate-300 hidden sm:inline">— {current.content}</span>
+            <span className="text-slate-300 hidden md:inline">— {current.content}</span>
           </p>
         </div>
 

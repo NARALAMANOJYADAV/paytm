@@ -188,13 +188,13 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-3xl mx-auto space-y-8">
+    <div className="min-h-screen bg-slate-950 py-6 sm:py-12 px-3 sm:px-6 lg:px-8 pb-16 sm:pb-24">
+      <div className="max-w-3xl mx-auto space-y-6 sm:space-y-8">
         
         {/* Top Header */}
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-xs font-bold uppercase tracking-wider">
-            <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-[11px] sm:text-xs font-bold uppercase tracking-wider">
+            <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-cyan-400" />
             <span>Official Event Registration</span>
           </div>
           <h1 className="text-2xl sm:text-4xl font-black text-white uppercase tracking-tight">
@@ -205,8 +205,35 @@ export default function RegisterPage() {
           </p>
         </div>
 
-        {/* Progress Stepper */}
-        <div className="flex items-center justify-between max-w-xl mx-auto px-4">
+        {/* Mobile-Friendly Stepper (< sm) */}
+        <div className="sm:hidden bg-slate-900/90 border border-slate-800 rounded-2xl p-3.5 space-y-2.5 shadow-md">
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-extrabold text-white flex items-center gap-2">
+              <span className="w-5 h-5 rounded-full bg-cyan-500 text-slate-950 font-black text-[10px] flex items-center justify-center">
+                {currentStep}
+              </span>
+              <span>
+                {currentStep === 1 && "Personal Information"}
+                {currentStep === 2 && "Summary & Review"}
+                {currentStep === 3 && "Payment Confirmed"}
+                {currentStep === 4 && "Account Password Setup"}
+                {currentStep === 5 && "Digital Event Ticket"}
+              </span>
+            </span>
+            <span className="font-mono text-cyan-400 font-bold text-[11px]">
+              Step {currentStep} of 5
+            </span>
+          </div>
+          <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-cyan-400 to-blue-500 rounded-full transition-all duration-300"
+              style={{ width: `${(currentStep / 5) * 100}%` }}
+            />
+          </div>
+        </div>
+
+        {/* Desktop Stepper (sm:flex) */}
+        <div className="hidden sm:flex items-center justify-between max-w-xl mx-auto px-4">
           {[
             { step: 1, label: "Details" },
             { step: 2, label: "Summary" },
@@ -233,7 +260,7 @@ export default function RegisterPage() {
         {currentStep === 1 && (
           <form
             onSubmit={handleProceedToSummary}
-            className="rounded-3xl bg-slate-900/80 border border-slate-800 p-6 sm:p-8 space-y-6 shadow-xl"
+            className="rounded-3xl bg-slate-900/80 border border-slate-800 p-4 sm:p-8 space-y-5 sm:space-y-6 shadow-xl"
           >
             <div className="border-b border-slate-800 pb-4">
               <h2 className="text-lg font-bold text-white flex items-center gap-2">
@@ -485,7 +512,7 @@ export default function RegisterPage() {
 
         {/* STEP 2: REGISTRATION SUMMARY & PAYMENT */}
         {currentStep === 2 && (
-          <div className="rounded-3xl bg-slate-900 border border-slate-800 p-6 sm:p-8 space-y-6 shadow-2xl">
+          <div className="rounded-3xl bg-slate-900 border border-slate-800 p-4 sm:p-8 space-y-5 sm:space-y-6 shadow-2xl">
             <div className="border-b border-slate-800 pb-4 flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-black text-white">Registration Summary</h2>
@@ -618,22 +645,22 @@ export default function RegisterPage() {
 
         {/* STEP 3: PAYMENT SUCCESS */}
         {currentStep === 3 && (
-          <div className="rounded-3xl bg-slate-900 border border-emerald-500/40 p-6 sm:p-8 space-y-6 shadow-2xl text-center animate-in zoom-in-95 duration-200">
+          <div className="rounded-3xl bg-slate-900 border border-emerald-500/40 p-4 sm:p-8 space-y-5 sm:space-y-6 shadow-2xl text-center animate-in zoom-in-95 duration-200">
             <div className="w-16 h-16 rounded-full bg-emerald-500/20 border-2 border-emerald-400 mx-auto flex items-center justify-center text-emerald-400 shadow-lg shadow-emerald-500/30">
               <CheckCircle2 className="w-8 h-8" />
             </div>
 
             <div>
-              <h2 className="text-2xl font-black text-white">Payment Successful</h2>
+              <h2 className="text-xl sm:text-2xl font-black text-white">Payment Successful</h2>
               <p className="text-xs text-slate-400 mt-1">
                 Server-side payment signature verified and registration recorded.
               </p>
             </div>
 
-            <div className="bg-slate-950 rounded-2xl p-5 border border-slate-800 max-w-md mx-auto text-left text-xs space-y-2.5">
+            <div className="bg-slate-950 rounded-2xl p-4 sm:p-5 border border-slate-800 max-w-md mx-auto text-left text-xs space-y-2.5">
               <div className="flex items-center justify-between">
                 <span className="text-slate-400">Transaction ID:</span>
-                <span className="font-mono text-cyan-300 font-bold">{paymentTransactionId}</span>
+                <span className="font-mono text-cyan-300 font-bold break-all">{paymentTransactionId}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-slate-400">Amount Paid:</span>
@@ -649,11 +676,11 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            <div className="pt-2">
+            <div className="pt-2 pb-2">
               <button
                 type="button"
                 onClick={() => setCurrentStep(4)}
-                className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 hover:from-cyan-300 hover:to-blue-400 text-slate-950 font-black text-sm uppercase tracking-wider shadow-lg shadow-cyan-500/25 transition-all inline-flex items-center justify-center gap-2"
+                className="w-full py-4 px-6 rounded-xl bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-500 hover:from-cyan-300 hover:to-blue-400 text-slate-950 font-black text-sm uppercase tracking-wider shadow-xl shadow-cyan-500/30 transition-all inline-flex items-center justify-center gap-2 active:scale-98"
               >
                 <span>SETUP LOGIN ACCOUNT (PASSWORD)</span>
                 <ArrowRight className="w-4 h-4" />
@@ -666,7 +693,7 @@ export default function RegisterPage() {
         {currentStep === 4 && (
           <form
             onSubmit={handleCreateAccount}
-            className="rounded-3xl bg-slate-900 border border-slate-800 p-6 sm:p-8 space-y-6 shadow-2xl max-w-md mx-auto"
+            className="rounded-3xl bg-slate-900 border border-slate-800 p-4 sm:p-8 space-y-5 sm:space-y-6 shadow-2xl max-w-md mx-auto"
           >
             <div className="text-center space-y-1">
               <div className="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 mx-auto flex items-center justify-center">

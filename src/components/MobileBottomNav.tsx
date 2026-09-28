@@ -10,6 +10,11 @@ export default function MobileBottomNav() {
   const pathname = usePathname();
   const { role, isAuthenticated } = useAuth();
 
+  // Hide sticky bottom bar on dedicated checkout / form flows so it never covers buttons
+  if (pathname.startsWith("/register") || pathname.startsWith("/login") || pathname.startsWith("/coordinator/checkin")) {
+    return null;
+  }
+
   const getDashboardLink = () => {
     if (role === "admin") return "/admin";
     if (role === "coordinator") return "/coordinator";
@@ -51,7 +56,7 @@ export default function MobileBottomNav() {
   ];
 
   return (
-    <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-slate-950/95 backdrop-blur-2xl border-t border-slate-800/90 px-3 py-2 pb-safe shadow-[0_-10px_25px_rgba(0,0,0,0.6)]">
+    <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-950/95 backdrop-blur-2xl border-t border-slate-800/90 px-3 py-2 shadow-[0_-10px_25px_rgba(0,0,0,0.6)]">
       <nav className="flex items-center justify-around max-w-md mx-auto">
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -61,13 +66,11 @@ export default function MobileBottomNav() {
               <Link
                 key={item.name}
                 href={item.href}
-                className="flex flex-col items-center -mt-5 group"
+                className="flex items-center gap-1.5 py-1.5 px-3 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-950 font-bold shadow-md shadow-cyan-500/25 active:scale-95 transition-transform"
               >
-                <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-cyan-400 via-sky-400 to-blue-600 flex items-center justify-center text-slate-950 shadow-lg shadow-cyan-500/40 group-active:scale-95 transition-transform border-2 border-slate-950">
-                  <Icon className="w-6 h-6 stroke-[2.5]" />
-                </div>
-                <span className="text-[10px] font-black text-cyan-400 mt-0.5 tracking-tight">
-                  ₹50 / ₹100
+                <Icon className="w-3.5 h-3.5 stroke-[2.5]" />
+                <span className="text-[11px] font-black uppercase tracking-tight">
+                  Register
                 </span>
               </Link>
             );
@@ -83,8 +86,8 @@ export default function MobileBottomNav() {
                   : "text-slate-400 hover:text-slate-200"
               }`}
             >
-              <Icon className={`w-5 h-5 ${item.isActive ? "text-cyan-400" : "text-slate-400"}`} />
-              <span className="text-[10px] mt-1 tracking-tight">
+              <Icon className={`w-4 h-4 ${item.isActive ? "text-cyan-400" : "text-slate-400"}`} />
+              <span className="text-[10px] mt-0.5 tracking-tight">
                 {item.name}
               </span>
             </Link>
