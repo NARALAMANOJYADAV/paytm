@@ -30,15 +30,22 @@ import {
   X,
   QrCode,
   Check,
-  Share2
+  Share2,
+  Sun,
+  Rocket,
+  Coffee,
+  Utensils
 } from "lucide-react";
 import { loadStore } from "@/lib/store";
+import { generateQrDataUrl } from "@/lib/qr";
+import { downloadIcsFile } from "@/lib/ics";
 
 export default function HomePage() {
   const [seatsLeft, setSeatsLeft] = useState(18);
   const [faqOpen, setFaqOpen] = useState<number | null>(null);
   const [heroViewMode, setHeroViewMode] = useState<"poster" | "mobile">("poster");
   const [posterModalOpen, setPosterModalOpen] = useState(false);
+  const [qrDataUrl, setQrDataUrl] = useState<string>("");
 
   // Live countdown state
   const [timeLeft, setTimeLeft] = useState({
@@ -49,6 +56,8 @@ export default function HomePage() {
   });
 
   useEffect(() => {
+    generateQrDataUrl("P2P-2026-00042").then(url => setQrDataUrl(url));
+
     const store = loadStore();
     const registeredCount = store.registrations.filter(r => r.payment_status === "success").length;
     setSeatsLeft(Math.max(0, store.eventConfig.capacity - registeredCount));
@@ -240,13 +249,17 @@ export default function HomePage() {
                     <div className="text-[10px] text-slate-400">23KB1A3064 • AI & DS (4th Year)</div>
                   </div>
                   <div className="w-24 h-24 mx-auto bg-white rounded-lg p-1.5 flex items-center justify-center shadow-md">
-                    <Image
-                      src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=P2P-2026-00042"
-                      alt="QR Ticket"
-                      width={90}
-                      height={90}
-                      className="w-full h-full object-contain"
-                    />
+                    {qrDataUrl ? (
+                      <img
+                        src={qrDataUrl}
+                        alt="QR Ticket"
+                        className="w-full h-full object-contain"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-slate-900 text-cyan-400 font-mono text-[9px] font-bold">
+                        P2P QR
+                      </div>
+                    )}
                   </div>
                   <div className="text-[10px] text-slate-300 pt-1">
                     📍 Seminar Hall, New CSE Block
@@ -479,13 +492,17 @@ export default function HomePage() {
                     </div>
 
                     <div className="w-28 h-28 mx-auto bg-white rounded-xl p-2 shadow-lg flex items-center justify-center">
-                      <Image
-                        src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=P2P-2026-00042"
-                        alt="QR Code"
-                        width={100}
-                        height={100}
-                        className="w-full h-full object-contain"
-                      />
+                      {qrDataUrl ? (
+                        <img
+                          src={qrDataUrl}
+                          alt="QR Code"
+                          className="w-full h-full object-contain"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-slate-900 text-cyan-400 font-mono text-[10px] font-bold">
+                          P2P QR
+                        </div>
+                      )}
                     </div>
 
                     <div className="text-[11px] text-slate-300">
@@ -836,48 +853,186 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* SECTION 12: EVENT SCHEDULE */}
+      {/* SECTION 12: EVENT SCHEDULE (SIDE BY SIDE TRACKS) */}
       <section id="schedule" className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-slate-950 via-slate-900/40 to-slate-950 border-b border-slate-800/80">
-        <div className="max-w-4xl mx-auto space-y-12">
+        <div className="max-w-7xl mx-auto space-y-12">
           
           <div className="text-center space-y-3">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-300 text-xs font-bold uppercase tracking-wider">
               <Clock className="w-3.5 h-3.5 text-cyan-400" />
-              <span>Comprehensive Timeline</span>
+              <span>Full-Day Timeline • 9:00 AM – 4:00 PM</span>
             </div>
             <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
               EVENT SCHEDULE
             </h2>
-            <p className="text-slate-400 text-sm">
-              Wednesday, 30 September 2026 • Seminar Hall, New CSE Block
+            <p className="text-slate-400 text-sm max-w-xl mx-auto">
+              Wednesday, 30 September 2026 • Seminar Hall, New CSE Block, NBKRIST
             </p>
+            <div className="pt-2 flex justify-center">
+              <button
+                type="button"
+                onClick={() => downloadIcsFile()}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900 border border-cyan-500/40 hover:border-cyan-400 text-cyan-300 font-bold text-xs shadow-lg shadow-cyan-500/10 hover:shadow-cyan-500/20 transition-all active:scale-95"
+              >
+                <Calendar className="w-3.5 h-3.5 text-cyan-400" />
+                <span>Add Workshop to Calendar (.ics)</span>
+              </button>
+            </div>
           </div>
 
-          <div className="relative border-l-2 border-cyan-500/30 ml-4 sm:ml-8 space-y-6">
-            {scheduleItems.map((item, index) => (
-              <div key={index} className="relative pl-6 sm:pl-8 group">
-                {/* Timeline node */}
-                <div className="absolute -left-[9px] top-1.5 w-4 h-4 rounded-full bg-slate-950 border-2 border-cyan-400 group-hover:bg-cyan-400 transition-colors"></div>
-
-                <div className="rounded-2xl bg-slate-900/60 border border-slate-800 p-4 sm:p-5 group-hover:border-cyan-500/40 transition-all">
-                  <div className="flex flex-wrap items-center justify-between gap-2 mb-1.5">
-                    <span className="font-mono text-xs sm:text-sm font-extrabold text-cyan-400 bg-cyan-950/60 px-2.5 py-0.5 rounded border border-cyan-500/20">
-                      {item.time}
-                    </span>
-                    <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-slate-800 text-slate-300">
-                      {item.category}
-                    </span>
+          {/* Side by Side Grid: Morning Track vs Afternoon Track */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+            
+            {/* COLUMN 1: Morning Track (9:00 AM – 1:30 PM) */}
+            <div className="rounded-3xl bg-slate-900/70 border border-cyan-500/30 p-5 sm:p-7 space-y-6 shadow-xl relative overflow-hidden">
+              <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+                    <Sun className="w-5 h-5" />
                   </div>
-
-                  <h3 className="font-bold text-white text-sm sm:text-base">
-                    {item.title}
-                  </h3>
-                  <p className="text-xs text-slate-400 mt-1">
-                    {item.desc}
-                  </p>
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-cyan-400 tracking-wider">Session 1 • 9:00 AM – 1:30 PM</span>
+                    <h3 className="text-lg font-black text-white">Morning Track: Keynotes & Masterclasses</h3>
+                  </div>
                 </div>
+                <span className="hidden sm:inline px-2.5 py-1 rounded-full bg-cyan-950/80 border border-cyan-500/30 text-cyan-300 text-[11px] font-mono font-bold">
+                  9 Sessions
+                </span>
               </div>
-            ))}
+
+              <div className="relative border-l-2 border-cyan-500/30 ml-3 sm:ml-4 space-y-4">
+                {scheduleItems.slice(0, 9).map((item, index) => {
+                  const isKeynote = item.category.includes("Keynote");
+                  const isBreak = item.category === "Break" || item.category === "Dining";
+
+                  return (
+                    <div key={index} className="relative pl-5 sm:pl-6 group">
+                      {/* Timeline node */}
+                      <div className={`absolute -left-[7px] top-1.5 w-3 h-3 rounded-full border-2 transition-all ${
+                        isKeynote 
+                          ? "bg-cyan-400 border-white ring-4 ring-cyan-500/20" 
+                          : isBreak
+                          ? "bg-amber-400 border-slate-900"
+                          : "bg-slate-950 border-cyan-400 group-hover:bg-cyan-400"
+                      }`}></div>
+
+                      <div className={`rounded-xl p-3.5 sm:p-4 border transition-all ${
+                        isKeynote
+                          ? "bg-cyan-950/30 border-cyan-500/40 shadow-md shadow-cyan-500/10"
+                          : isBreak
+                          ? "bg-amber-950/20 border-amber-500/30"
+                          : "bg-slate-950/60 border-slate-800/80 hover:border-cyan-500/30"
+                      }`}>
+                        <div className="flex flex-wrap items-center justify-between gap-1.5 mb-1">
+                          <span className="font-mono text-xs font-extrabold text-cyan-300 bg-cyan-950/80 px-2 py-0.5 rounded border border-cyan-500/20">
+                            {item.time}
+                          </span>
+                          <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${
+                            isKeynote 
+                              ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/30" 
+                              : isBreak
+                              ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                              : "bg-slate-800 text-slate-300"
+                          }`}>
+                            {item.category}
+                          </span>
+                        </div>
+
+                        <h4 className="font-bold text-white text-sm sm:text-base">
+                          {item.title}
+                        </h4>
+                        <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                          {item.desc}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* COLUMN 2: Afternoon Track (1:30 PM – 4:00 PM) */}
+            <div className="rounded-3xl bg-slate-900/70 border border-purple-500/30 p-5 sm:p-7 space-y-6 shadow-xl relative overflow-hidden">
+              <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400">
+                    <Rocket className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-purple-400 tracking-wider">Session 2 • 1:30 PM – 4:00 PM</span>
+                    <h3 className="text-lg font-black text-white">Afternoon Track: AI Build Hackathon & Finale</h3>
+                  </div>
+                </div>
+                <span className="hidden sm:inline px-2.5 py-1 rounded-full bg-purple-950/80 border border-purple-500/30 text-purple-300 text-[11px] font-mono font-bold">
+                  5 Sessions
+                </span>
+              </div>
+
+              <div className="relative border-l-2 border-purple-500/30 ml-3 sm:ml-4 space-y-4">
+                {scheduleItems.slice(9).map((item, index) => {
+                  const isHackathon = item.category === "Hackathon";
+                  const isAwards = item.category === "Closing" || item.category === "Judging";
+
+                  return (
+                    <div key={index} className="relative pl-5 sm:pl-6 group">
+                      {/* Timeline node */}
+                      <div className={`absolute -left-[7px] top-1.5 w-3 h-3 rounded-full border-2 transition-all ${
+                        isHackathon 
+                          ? "bg-purple-400 border-white ring-4 ring-purple-500/20" 
+                          : isAwards
+                          ? "bg-amber-400 border-white ring-4 ring-amber-500/20"
+                          : "bg-slate-950 border-purple-400 group-hover:bg-purple-400"
+                      }`}></div>
+
+                      <div className={`rounded-xl p-3.5 sm:p-4 border transition-all ${
+                        isHackathon
+                          ? "bg-purple-950/30 border-purple-500/40 shadow-md shadow-purple-500/10"
+                          : isAwards
+                          ? "bg-amber-950/20 border-amber-500/30"
+                          : "bg-slate-950/60 border-slate-800/80 hover:border-purple-500/30"
+                      }`}>
+                        <div className="flex flex-wrap items-center justify-between gap-1.5 mb-1">
+                          <span className="font-mono text-xs font-extrabold text-purple-300 bg-purple-950/80 px-2 py-0.5 rounded border border-purple-500/20">
+                            {item.time}
+                          </span>
+                          <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${
+                            isHackathon 
+                              ? "bg-purple-500/20 text-purple-300 border border-purple-500/30" 
+                              : isAwards
+                              ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                              : "bg-slate-800 text-slate-300"
+                          }`}>
+                            {item.category}
+                          </span>
+                        </div>
+
+                        <h4 className="font-bold text-white text-sm sm:text-base">
+                          {item.title}
+                        </h4>
+                        <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                          {item.desc}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Hackathon Callout Banner */}
+              <div className="p-4 rounded-2xl bg-gradient-to-r from-purple-950/50 via-slate-900 to-indigo-950/50 border border-purple-500/30 flex items-center justify-between gap-3 text-xs">
+                <div>
+                  <span className="font-black text-white block">90-Minute AI Build Challenge</span>
+                  <span className="text-slate-400 text-[11px]">Teams of 1–4 • Mentors on floor • Cash prizes & goodies</span>
+                </div>
+                <Link
+                  href="/register"
+                  className="flex-shrink-0 px-3 py-1.5 rounded-lg bg-purple-500 hover:bg-purple-400 text-slate-950 font-black text-[11px] uppercase tracking-wider transition-all"
+                >
+                  Join Challenge
+                </Link>
+              </div>
+            </div>
+
           </div>
         </div>
       </section>
