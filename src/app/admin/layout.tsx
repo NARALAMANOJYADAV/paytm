@@ -39,7 +39,6 @@ export default function AdminLayout({
     { name: "Coordinators & Roles", href: "/admin/coordinators", icon: Shield },
     { name: "Teams & Roster", href: "/admin/teams", icon: Layers },
     { name: "Judging & Submissions", href: "/admin/submissions", icon: Send },
-    { name: "Certificates", href: "/admin/certificates", icon: Award },
     { name: "Event Resources", href: "/admin/resources", icon: BookOpen },
     { name: "Announcements", href: "/admin/announcements", icon: Megaphone },
     { name: "Support Desk", href: "/admin/support", icon: HelpCircle },

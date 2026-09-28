@@ -160,12 +160,6 @@ export default function AdminOverviewPage() {
         </div>
 
         <div className="rounded-2xl bg-slate-900 border border-slate-800 p-4 space-y-1">
-          <span className="text-[10px] uppercase font-bold text-slate-400 block">Certificates Issued</span>
-          <span className="text-2xl sm:text-3xl font-black text-amber-300">{stats.certificates}</span>
-          <span className="text-[10px] text-slate-400 block">Tamper-evident QR</span>
-        </div>
-
-        <div className="rounded-2xl bg-slate-900 border border-slate-800 p-4 space-y-1">
           <span className="text-[10px] uppercase font-bold text-rose-400 block">Open Support</span>
           <span className="text-2xl sm:text-3xl font-black text-rose-300">{stats.openSupportTickets}</span>
           <span className="text-[10px] text-slate-400 block">Tickets in queue</span>

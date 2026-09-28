@@ -34,7 +34,8 @@ import {
   Sun,
   Rocket,
   Coffee,
-  Utensils
+  Utensils,
+  Download
 } from "lucide-react";
 import { loadStore } from "@/lib/store";
 import { generateQrDataUrl } from "@/lib/qr";
@@ -53,6 +54,11 @@ export default function HomePage() {
   const [faqOpen, setFaqOpen] = useState<number | null>(null);
   const [heroViewMode, setHeroViewMode] = useState<"poster" | "mobile">("poster");
   const [posterModalOpen, setPosterModalOpen] = useState(false);
+  const [speakerModal, setSpeakerModal] = useState<{
+    name: string;
+    role: string;
+    image: string;
+  } | null>(null);
   const [qrDataUrl, setQrDataUrl] = useState<string>("");
 
   // Live countdown state
@@ -117,11 +123,11 @@ export default function HomePage() {
     { title: "Production-Oriented AI", desc: "Latency optimization, cost management, safety guardrails, and model evaluation." },
   ];
 
-  const scheduleItems = [
+  const scheduleDay1 = [
     { time: "9:00 – 9:15 AM", title: "Registration and Seating", category: "Check-in", desc: "Desk opens at 8:45 AM. QR badge verification and workshop kit distribution." },
     { time: "9:15 – 9:25 AM", title: "Welcome Address", category: "Inauguration", desc: "Opening remarks by Head of Department, IT & AI&DS, NBKRIST." },
     { time: "9:25 – 9:35 AM", title: "Prompt to Production Introduction", category: "Orientation", desc: "Overview of workshop goals, day agenda, and ISTE collaboration." },
-    { time: "9:35 – 10:50 AM", title: "Expert Session – Mr. Suman Mandal", category: "Keynote 1", desc: "Program Lead at Paytm. Deep dive into Generative AI in Production (1h 15m virtual masterclass)." },
+    { time: "9:35 – 10:50 AM", title: "Expert Session – Mr. Suman Mandal", category: "Keynote 1", desc: "Head of Partnerships & AI Workshops, Paytm. Deep dive into Generative AI in Production (1h 15m virtual masterclass)." },
     { time: "10:50 – 11:00 AM", title: "Interaction / Q&A", category: "Interactive", desc: "Open floor Q&A with Mr. Suman Mandal on industry practices and career pathways." },
     { time: "11:00 – 11:15 AM", title: "Tea Break & Networking", category: "Break", desc: "Refreshments provided in the foyer." },
     { time: "11:15 AM – 12:30 PM", title: "Expert Session – Mr. Shivam Behl", category: "Keynote 2", desc: "SDE-II at Microsoft. Advanced AI-Assisted Development & Agentic Systems (1h 15m masterclass)." },
@@ -129,9 +135,13 @@ export default function HomePage() {
     { time: "12:40 – 1:30 PM", title: "Lunch Break", category: "Dining", desc: "Special lunch provided for all registered participants at New CSE Block dining hall." },
     { time: "1:30 – 1:45 PM", title: "Build Challenge Introduction", category: "Hackathon", desc: "Problem statement reveal, judging criteria announcement, and sandbox API distribution." },
     { time: "1:45 – 3:15 PM", title: "Hands-on AI Build", category: "Hackathon", desc: "Intensive 90-minute hands-on build challenge in teams. Faculty and mentors on floor." },
-    { time: "3:15 – 3:35 PM", title: "Project Demonstrations", category: "Showcase", desc: "Top team live demos and interactive proof-of-concept testing." },
-    { time: "3:35 – 3:50 PM", title: "Jury Evaluation", category: "Judging", desc: "Panel scoring on Innovation, Prompting, Tech Execution, and Presentation." },
-    { time: "3:50 – 4:00 PM", title: "Prize Distribution & Vote of Thanks", category: "Closing", desc: "Awarding winners, distribution of ISTE certificates, and concluding remarks." },
+    { time: "3:15 – 3:45 PM", title: "Project Demonstrations & Submissions", category: "Showcase", desc: "Live project demonstrations, testing, and team code repository submissions." },
+    { time: "3:45 – 4:00 PM", title: "Day 1 Wrap-up & Briefing", category: "Wrap-up", desc: "Review of Day 1 code submissions and briefing for next day's Grand Finale." },
+  ];
+
+  const scheduleDay2 = [
+    { time: "10:00 – 11:30 AM", title: "Jury Evaluation", category: "Judging", desc: "Grand jury panel evaluation on Innovation, Prompting, Technical Execution, and Presentation." },
+    { time: "11:30 AM – 12:30 PM", title: "Prize Distribution & Vote of Thanks", category: "Grand Finale", desc: "Awarding winner & runner-up trophies, surprise cash awards, certificates of merit, mementos, and closing remarks." },
   ];
 
   const faqs = [
@@ -600,6 +610,67 @@ export default function HomePage() {
         </div>
       )}
 
+      {/* LIGHTBOX MODAL FOR SPEAKER FULL UNCHOPPED PHOTO */}
+      {speakerModal && (
+        <div 
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setSpeakerModal(null)}
+          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="relative max-w-2xl w-full bg-slate-900 rounded-3xl border border-cyan-500/50 shadow-2xl overflow-hidden flex flex-col max-h-[92vh]"
+          >
+            <div className="p-3 sm:p-4 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
+              <div>
+                <h3 className="font-extrabold text-sm sm:text-base text-white">
+                  {speakerModal.name}
+                </h3>
+                <p className="text-[11px] sm:text-xs text-cyan-400 font-semibold">
+                  {speakerModal.role}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <a
+                  href={speakerModal.image}
+                  download={`${speakerModal.name.replace(/[^a-zA-Z0-9]/g, "_")}.png`}
+                  className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
+                  title="Download Photo"
+                >
+                  <Download className="w-4 h-4" />
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setSpeakerModal(null)}
+                  className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
+                  title="Close Modal"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            <div className="relative flex-1 min-h-[380px] sm:min-h-[500px] w-full bg-slate-950 p-3 flex items-center justify-center">
+              <Image
+                src={speakerModal.image}
+                alt={speakerModal.name}
+                fill
+                sizes="(max-width: 640px) 100vw, 640px"
+                className="object-contain p-2"
+                priority
+              />
+            </div>
+
+            <div className="p-3 bg-slate-950 border-t border-slate-800 text-center">
+              <span className="text-[11px] text-slate-400">
+                Official Speaker Portrait • Prompt to Production 2026 • Click anywhere outside to close
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* SECTION 9: EVENT HIGHLIGHTS */}
       <section id="about" className="py-20 px-4 sm:px-6 lg:px-8 bg-slate-950 border-b border-slate-800/80">
         <div className="max-w-7xl mx-auto space-y-12">
@@ -672,15 +743,29 @@ export default function HomePage() {
             {/* Speaker 1: Mr. Suman Mandal */}
             <div className="relative group rounded-3xl bg-slate-900/90 border border-cyan-500/30 overflow-hidden shadow-xl hover:shadow-cyan-500/20 transition-all duration-300 flex flex-col">
               <div className="grid grid-cols-1 sm:grid-cols-12 flex-1">
-                <div className="sm:col-span-5 relative h-72 sm:h-auto min-h-[280px] bg-slate-950">
-                  <Image
-                    src="/images/suman_mandal.png"
-                    alt="Mr. Suman Mandal - Program Lead, Paytm"
-                    fill
-                    sizes="(max-width: 640px) 100vw, 320px"
-                    className="object-cover object-top group-hover:scale-105 transition-transform duration-500"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent sm:hidden"></div>
+                <div 
+                  onClick={() => setSpeakerModal({
+                    name: "Mr. Suman Mandal",
+                    role: "Head of Partnerships & AI Workshops, Paytm",
+                    image: "/images/suman_mandal.png"
+                  })}
+                  className="sm:col-span-5 relative min-h-[340px] sm:min-h-[420px] bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 p-3 flex flex-col items-center justify-center cursor-pointer group/img"
+                  title="Click to view full photo"
+                >
+                  <div className="relative w-full h-full min-h-[320px] sm:min-h-[400px]">
+                    <Image
+                      src="/images/suman_mandal.png"
+                      alt="Mr. Suman Mandal - Program Lead, Paytm"
+                      fill
+                      sizes="(max-width: 640px) 100vw, 360px"
+                      className="object-contain object-bottom group-hover/img:scale-[1.02] transition-transform duration-300 drop-shadow-2xl"
+                      priority
+                    />
+                  </div>
+                  <div className="absolute bottom-3 right-3 px-2 py-1 rounded-md bg-slate-950/85 border border-slate-700/80 text-[10px] font-bold text-cyan-300 flex items-center gap-1 opacity-90 group-hover/img:opacity-100 shadow-lg backdrop-blur-sm">
+                    <Maximize2 className="w-3 h-3 text-cyan-400" />
+                    <span>View Full Image</span>
+                  </div>
                 </div>
 
                 <div className="sm:col-span-7 p-6 flex flex-col justify-between space-y-4">
@@ -741,7 +826,7 @@ export default function HomePage() {
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="font-semibold text-slate-300">Session:</span>
-                      <span className="text-slate-200">9:35 AM – 10:50 AM</span>
+                      <span className="text-slate-200">Day 1 • 9:35 AM – 10:50 AM</span>
                     </div>
                   </div>
                 </div>
@@ -751,15 +836,29 @@ export default function HomePage() {
             {/* Speaker 2: Mr. Shivam Behl */}
             <div className="relative group rounded-3xl bg-slate-900/90 border border-cyan-500/30 overflow-hidden shadow-xl hover:shadow-cyan-500/20 transition-all duration-300 flex flex-col">
               <div className="grid grid-cols-1 sm:grid-cols-12 flex-1">
-                <div className="sm:col-span-5 relative h-72 sm:h-auto min-h-[280px] bg-slate-950">
-                  <Image
-                    src="/images/shivam_behl.png"
-                    alt="Mr. Shivam Behl - SDE-II, Microsoft"
-                    fill
-                    sizes="(max-width: 640px) 100vw, 320px"
-                    className="object-cover object-top group-hover:scale-105 transition-transform duration-500"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent sm:hidden"></div>
+                <div 
+                  onClick={() => setSpeakerModal({
+                    name: "Mr. Shivam Behl",
+                    role: "Software Development Engineer II (SDE-II), Microsoft",
+                    image: "/images/shivam_behl.png"
+                  })}
+                  className="sm:col-span-5 relative min-h-[340px] sm:min-h-[420px] bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 p-3 flex flex-col items-center justify-center cursor-pointer group/img"
+                  title="Click to view full photo"
+                >
+                  <div className="relative w-full h-full min-h-[320px] sm:min-h-[400px]">
+                    <Image
+                      src="/images/shivam_behl.png"
+                      alt="Mr. Shivam Behl - SDE-II, Microsoft"
+                      fill
+                      sizes="(max-width: 640px) 100vw, 360px"
+                      className="object-contain object-bottom group-hover/img:scale-[1.02] transition-transform duration-300 drop-shadow-2xl"
+                      priority
+                    />
+                  </div>
+                  <div className="absolute bottom-3 right-3 px-2 py-1 rounded-md bg-slate-950/85 border border-slate-700/80 text-[10px] font-bold text-cyan-300 flex items-center gap-1 opacity-90 group-hover/img:opacity-100 shadow-lg backdrop-blur-sm">
+                    <Maximize2 className="w-3 h-3 text-cyan-400" />
+                    <span>View Full Image</span>
+                  </div>
                 </div>
 
                 <div className="sm:col-span-7 p-6 flex flex-col justify-between space-y-4">
@@ -820,7 +919,7 @@ export default function HomePage() {
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="font-semibold text-slate-300">Session:</span>
-                      <span className="text-slate-200">11:15 AM – 12:30 PM</span>
+                      <span className="text-slate-200">Day 1 • 11:15 AM – 12:30 PM</span>
                     </div>
                   </div>
                 </div>
@@ -925,20 +1024,20 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* SECTION 12: EVENT SCHEDULE (SIDE BY SIDE TRACKS) */}
+      {/* SECTION 12: EVENT SCHEDULE (2-DAY TIMELINE: WORKSHOP & NEXT DAY FINALE) */}
       <section id="schedule" className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-slate-950 via-slate-900/40 to-slate-950 border-b border-slate-800/80">
         <div className="max-w-7xl mx-auto space-y-12">
           
           <div className="text-center space-y-3">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-300 text-xs font-bold uppercase tracking-wider">
               <Clock className="w-3.5 h-3.5 text-cyan-400" />
-              <span>Full-Day Timeline • 9:00 AM – 4:00 PM</span>
+              <span>2-Day Event Schedule</span>
             </div>
             <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
               EVENT SCHEDULE
             </h2>
-            <p className="text-slate-400 text-sm max-w-xl mx-auto">
-              Wednesday, 30 September 2026 • Seminar Hall, New CSE Block, NBKRIST
+            <p className="text-slate-400 text-sm max-w-2xl mx-auto">
+              Wednesday, 30 September 2026 & Thursday, 1 October 2026 (Next Day) • Seminar Hall, New CSE Block, NBKRIST
             </p>
             <div className="pt-2 flex justify-center">
               <button
@@ -952,10 +1051,10 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Side by Side Grid: Morning Track vs Afternoon Track */}
+          {/* Side by Side Grid: Day 1 vs Day 2 (Next Day) */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
             
-            {/* COLUMN 1: Morning Track (9:00 AM – 1:30 PM) */}
+            {/* COLUMN 1: Day 1 - Wednesday, 30 September 2026 */}
             <div className="rounded-3xl bg-slate-900/70 border border-cyan-500/30 p-5 sm:p-7 space-y-6 shadow-xl relative overflow-hidden">
               <div className="flex items-center justify-between pb-4 border-b border-slate-800">
                 <div className="flex items-center gap-3">
@@ -963,19 +1062,20 @@ export default function HomePage() {
                     <Sun className="w-5 h-5" />
                   </div>
                   <div>
-                    <span className="text-[10px] uppercase font-bold text-cyan-400 tracking-wider">Session 1 • 9:00 AM – 1:30 PM</span>
-                    <h3 className="text-lg font-black text-white">Morning Track: Keynotes & Masterclasses</h3>
+                    <span className="text-[10px] uppercase font-bold text-cyan-400 tracking-wider">Day 1 • Wednesday, 30 Sep 2026 • 9:00 AM – 4:00 PM</span>
+                    <h3 className="text-lg font-black text-white">Workshop & AI Build Hackathon</h3>
                   </div>
                 </div>
                 <span className="hidden sm:inline px-2.5 py-1 rounded-full bg-cyan-950/80 border border-cyan-500/30 text-cyan-300 text-[11px] font-mono font-bold">
-                  9 Sessions
+                  {scheduleDay1.length} Sessions
                 </span>
               </div>
 
               <div className="relative border-l-2 border-cyan-500/30 ml-3 sm:ml-4 space-y-4">
-                {scheduleItems.slice(0, 9).map((item, index) => {
+                {scheduleDay1.map((item, index) => {
                   const isKeynote = item.category.includes("Keynote");
                   const isBreak = item.category === "Break" || item.category === "Dining";
+                  const isHackathon = item.category === "Hackathon";
 
                   return (
                     <div key={index} className="relative pl-5 sm:pl-6 group">
@@ -983,6 +1083,8 @@ export default function HomePage() {
                       <div className={`absolute -left-[7px] top-1.5 w-3 h-3 rounded-full border-2 transition-all ${
                         isKeynote 
                           ? "bg-cyan-400 border-white ring-4 ring-cyan-500/20" 
+                          : isHackathon
+                          ? "bg-purple-400 border-white ring-4 ring-purple-500/20"
                           : isBreak
                           ? "bg-amber-400 border-slate-900"
                           : "bg-slate-950 border-cyan-400 group-hover:bg-cyan-400"
@@ -991,6 +1093,8 @@ export default function HomePage() {
                       <div className={`rounded-xl p-3.5 sm:p-4 border transition-all ${
                         isKeynote
                           ? "bg-cyan-950/30 border-cyan-500/40 shadow-md shadow-cyan-500/10"
+                          : isHackathon
+                          ? "bg-purple-950/30 border-purple-500/40 shadow-md shadow-purple-500/10"
                           : isBreak
                           ? "bg-amber-950/20 border-amber-500/30"
                           : "bg-slate-950/60 border-slate-800/80 hover:border-cyan-500/30"
@@ -1002,6 +1106,8 @@ export default function HomePage() {
                           <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${
                             isKeynote 
                               ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/30" 
+                              : isHackathon
+                              ? "bg-purple-500/20 text-purple-300 border border-purple-500/30"
                               : isBreak
                               ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
                               : "bg-slate-800 text-slate-300"
@@ -1021,67 +1127,74 @@ export default function HomePage() {
                   );
                 })}
               </div>
+
+              {/* Day 1 Callout Banner */}
+              <div className="p-4 rounded-2xl bg-gradient-to-r from-purple-950/50 via-slate-900 to-indigo-950/50 border border-purple-500/30 flex items-center justify-between gap-3 text-xs">
+                <div>
+                  <span className="font-black text-white block">90-Minute Live Build Challenge</span>
+                  <span className="text-slate-400 text-[11px]">Teams of 1–4 • Mentors on floor • Live API sandboxes</span>
+                </div>
+                <Link
+                  href="/register"
+                  className="flex-shrink-0 px-3 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-[11px] uppercase tracking-wider transition-all"
+                >
+                  Register Now
+                </Link>
+              </div>
             </div>
 
-            {/* COLUMN 2: Afternoon Track (1:30 PM – 4:00 PM) */}
-            <div className="rounded-3xl bg-slate-900/70 border border-purple-500/30 p-5 sm:p-7 space-y-6 shadow-xl relative overflow-hidden">
+            {/* COLUMN 2: Day 2 (Next Day) - Thursday, 1 October 2026 */}
+            <div className="rounded-3xl bg-slate-900/70 border border-amber-500/30 p-5 sm:p-7 space-y-6 shadow-xl relative overflow-hidden">
               <div className="flex items-center justify-between pb-4 border-b border-slate-800">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400">
-                    <Rocket className="w-5 h-5" />
+                  <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                    <Award className="w-5 h-5" />
                   </div>
                   <div>
-                    <span className="text-[10px] uppercase font-bold text-purple-400 tracking-wider">Session 2 • 1:30 PM – 4:00 PM</span>
-                    <h3 className="text-lg font-black text-white">Afternoon Track: AI Build Hackathon & Finale</h3>
+                    <span className="text-[10px] uppercase font-bold text-amber-400 tracking-wider">Day 2 (Next Day) • Thursday, 1 Oct 2026 • 10:00 AM – 12:30 PM</span>
+                    <h3 className="text-lg font-black text-white">Grand Finale: Jury Evaluation & Awards</h3>
                   </div>
                 </div>
-                <span className="hidden sm:inline px-2.5 py-1 rounded-full bg-purple-950/80 border border-purple-500/30 text-purple-300 text-[11px] font-mono font-bold">
-                  5 Sessions
+                <span className="hidden sm:inline px-2.5 py-1 rounded-full bg-amber-950/80 border border-amber-500/30 text-amber-300 text-[11px] font-mono font-bold">
+                  Grand Finale
                 </span>
               </div>
 
-              <div className="relative border-l-2 border-purple-500/30 ml-3 sm:ml-4 space-y-4">
-                {scheduleItems.slice(9).map((item, index) => {
-                  const isHackathon = item.category === "Hackathon";
-                  const isAwards = item.category === "Closing" || item.category === "Judging";
+              <div className="relative border-l-2 border-amber-500/30 ml-3 sm:ml-4 space-y-5">
+                {scheduleDay2.map((item, index) => {
+                  const isFinale = item.category === "Grand Finale";
 
                   return (
                     <div key={index} className="relative pl-5 sm:pl-6 group">
                       {/* Timeline node */}
                       <div className={`absolute -left-[7px] top-1.5 w-3 h-3 rounded-full border-2 transition-all ${
-                        isHackathon 
-                          ? "bg-purple-400 border-white ring-4 ring-purple-500/20" 
-                          : isAwards
-                          ? "bg-amber-400 border-white ring-4 ring-amber-500/20"
-                          : "bg-slate-950 border-purple-400 group-hover:bg-purple-400"
+                        isFinale 
+                          ? "bg-amber-400 border-white ring-4 ring-amber-500/20" 
+                          : "bg-indigo-400 border-white ring-4 ring-indigo-500/20"
                       }`}></div>
 
-                      <div className={`rounded-xl p-3.5 sm:p-4 border transition-all ${
-                        isHackathon
-                          ? "bg-purple-950/30 border-purple-500/40 shadow-md shadow-purple-500/10"
-                          : isAwards
-                          ? "bg-amber-950/20 border-amber-500/30"
-                          : "bg-slate-950/60 border-slate-800/80 hover:border-purple-500/30"
+                      <div className={`rounded-xl p-4 sm:p-5 border transition-all ${
+                        isFinale
+                          ? "bg-gradient-to-br from-amber-950/30 via-slate-900 to-amber-950/20 border-amber-500/40 shadow-lg shadow-amber-500/10"
+                          : "bg-indigo-950/20 border-indigo-500/30 hover:border-indigo-500/40"
                       }`}>
-                        <div className="flex flex-wrap items-center justify-between gap-1.5 mb-1">
-                          <span className="font-mono text-xs font-extrabold text-purple-300 bg-purple-950/80 px-2 py-0.5 rounded border border-purple-500/20">
+                        <div className="flex flex-wrap items-center justify-between gap-1.5 mb-1.5">
+                          <span className="font-mono text-xs font-extrabold text-amber-300 bg-amber-950/80 px-2 py-0.5 rounded border border-amber-500/20">
                             {item.time}
                           </span>
-                          <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${
-                            isHackathon 
-                              ? "bg-purple-500/20 text-purple-300 border border-purple-500/30" 
-                              : isAwards
-                              ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
-                              : "bg-slate-800 text-slate-300"
+                          <span className={`text-[10px] font-bold uppercase px-2.5 py-0.5 rounded ${
+                            isFinale 
+                              ? "bg-amber-500/20 text-amber-300 border border-amber-500/30" 
+                              : "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30"
                           }`}>
                             {item.category}
                           </span>
                         </div>
 
-                        <h4 className="font-bold text-white text-sm sm:text-base">
+                        <h4 className="font-black text-white text-base sm:text-lg">
                           {item.title}
                         </h4>
-                        <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                        <p className="text-xs text-slate-300 mt-1.5 leading-relaxed">
                           {item.desc}
                         </p>
                       </div>
@@ -1090,18 +1203,19 @@ export default function HomePage() {
                 })}
               </div>
 
-              {/* Hackathon Callout Banner */}
-              <div className="p-4 rounded-2xl bg-gradient-to-r from-purple-950/50 via-slate-900 to-indigo-950/50 border border-purple-500/30 flex items-center justify-between gap-3 text-xs">
-                <div>
-                  <span className="font-black text-white block">90-Minute AI Build Challenge</span>
-                  <span className="text-slate-400 text-[11px]">Teams of 1–4 • Mentors on floor • Cash prizes & goodies</span>
+              {/* Grand Finale Callout Banner */}
+              <div className="p-5 rounded-2xl bg-gradient-to-br from-amber-950/40 via-slate-900 to-yellow-950/30 border border-amber-500/40 space-y-3">
+                <div className="flex items-center gap-2 text-amber-400 font-extrabold text-xs uppercase tracking-wider">
+                  <Sparkles className="w-4 h-4" />
+                  <span>Grand Valedictory & Prize Distribution</span>
                 </div>
-                <Link
-                  href="/register"
-                  className="flex-shrink-0 px-3 py-1.5 rounded-lg bg-purple-500 hover:bg-purple-400 text-slate-950 font-black text-[11px] uppercase tracking-wider transition-all"
-                >
-                  Join Challenge
-                </Link>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Join institutional dignitaries, keynote faculty, and fellow student engineers for the ceremonial award distribution, memento presentation, and crowning of the hackathon champions.
+                </p>
+                <div className="pt-1 flex flex-wrap items-center gap-2 text-[11px] text-amber-200/90 font-mono">
+                  <span className="px-2 py-0.5 rounded bg-amber-950/80 border border-amber-500/30">🏆 Winner & Runner-up Trophies</span>
+                  <span className="px-2 py-0.5 rounded bg-amber-950/80 border border-amber-500/30">💰 Surprise Cash Awards</span>
+                </div>
               </div>
             </div>
 
