@@ -40,6 +40,14 @@ import { loadStore } from "@/lib/store";
 import { generateQrDataUrl } from "@/lib/qr";
 import { downloadIcsFile } from "@/lib/ics";
 
+function LinkedInIcon({ className = "w-3.5 h-3.5" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 10.9h2.79v8.37H6.46v-8.37M7.86 6.3a1.5 1.5 0 0 0-1.5 1.5c0 .83.67 1.5 1.5 1.5a1.5 1.5 0 0 0 1.5-1.5c0-.83-.67-1.5-1.5-1.5Z" />
+    </svg>
+  );
+}
+
 export default function HomePage() {
   const [seatsLeft, setSeatsLeft] = useState(18);
   const [faqOpen, setFaqOpen] = useState<number | null>(null);
@@ -659,35 +667,67 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
             
             {/* Speaker 1: Mr. Suman Mandal */}
-            <div className="relative group rounded-3xl bg-slate-900/80 border border-cyan-500/30 overflow-hidden shadow-xl hover:shadow-cyan-500/20 transition-all duration-300">
-              <div className="grid grid-cols-1 sm:grid-cols-12">
-                <div className="sm:col-span-5 relative h-64 sm:h-auto min-h-[220px]">
+            <div className="relative group rounded-3xl bg-slate-900/90 border border-cyan-500/30 overflow-hidden shadow-xl hover:shadow-cyan-500/20 transition-all duration-300 flex flex-col">
+              <div className="grid grid-cols-1 sm:grid-cols-12 flex-1">
+                <div className="sm:col-span-5 relative h-72 sm:h-auto min-h-[280px] bg-slate-950">
                   <Image
                     src="/images/suman_mandal.png"
                     alt="Mr. Suman Mandal - Program Lead, Paytm"
                     fill
+                    sizes="(max-width: 640px) 100vw, 320px"
                     className="object-cover object-top group-hover:scale-105 transition-transform duration-500"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent sm:hidden"></div>
                 </div>
 
                 <div className="sm:col-span-7 p-6 flex flex-col justify-between space-y-4">
-                  <div>
-                    <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[10px] font-extrabold uppercase tracking-wider bg-blue-500/20 text-blue-300 border border-blue-500/30 mb-2">
-                      Keynote Speaker
+                  <div className="space-y-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[10px] font-extrabold uppercase tracking-wider bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                        Keynote Speaker • Paytm
+                      </div>
+                      <a
+                        href="https://www.linkedin.com/in/suman-mandal-join/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 text-[11px] font-semibold transition-all group/link"
+                        title="View Suman Mandal on LinkedIn"
+                      >
+                        <LinkedInIcon className="w-3.5 h-3.5 text-blue-400" />
+                        <span>LinkedIn</span>
+                        <ExternalLink className="w-3 h-3 text-slate-400 group-hover/link:text-blue-300" />
+                      </a>
                     </div>
-                    <h3 className="text-xl font-black text-white">
-                      Mr. Suman Mandal
-                    </h3>
-                    <p className="text-sm font-bold text-cyan-400">
-                      Program Lead, Paytm
-                    </p>
-                    <p className="text-xs text-slate-300 mt-3 leading-relaxed">
-                      Leading strategic AI initiatives and production systems at Paytm. Specializes in scalable machine learning infrastructure, model fine-tuning, and real-time payment AI safety.
-                    </p>
+
+                    <div>
+                      <h3 className="text-xl font-black text-white">
+                        Mr. Suman Mandal
+                      </h3>
+                      <p className="text-sm font-bold text-cyan-400">
+                        Head of Partnerships & AI Workshops, Paytm
+                      </p>
+                    </div>
+
+                    <div className="space-y-1 pt-1">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                        About Speaker
+                      </span>
+                      <p className="text-xs text-slate-300 leading-relaxed">
+                        Leads strategic nationwide developer partnerships and AI workshops at Paytm, driving student and engineer empowerment in Agentic AI, Computer Vision, and production deployment architectures. An accomplished cybersecurity researcher and ethical hacker who has presented at international forums including THREAT CON on ML-driven automated security systems and CAPTCHA bypass mechanisms, with recognized vulnerability disclosures across premier tech platforms.
+                      </p>
+                    </div>
+
+                    {/* Expertise Tags */}
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {["Agentic AI", "Computer Vision", "AI Security", "Paytm Platforms"].map((tag) => (
+                        <span key={tag} className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-[10px] font-medium text-slate-300">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
                   </div>
 
                   <div className="pt-3 border-t border-slate-800 text-xs space-y-1.5 text-slate-400">
@@ -709,32 +749,64 @@ export default function HomePage() {
             </div>
 
             {/* Speaker 2: Mr. Shivam Behl */}
-            <div className="relative group rounded-3xl bg-slate-900/80 border border-cyan-500/30 overflow-hidden shadow-xl hover:shadow-cyan-500/20 transition-all duration-300">
-              <div className="grid grid-cols-1 sm:grid-cols-12">
-                <div className="sm:col-span-5 relative h-64 sm:h-auto min-h-[220px]">
+            <div className="relative group rounded-3xl bg-slate-900/90 border border-cyan-500/30 overflow-hidden shadow-xl hover:shadow-cyan-500/20 transition-all duration-300 flex flex-col">
+              <div className="grid grid-cols-1 sm:grid-cols-12 flex-1">
+                <div className="sm:col-span-5 relative h-72 sm:h-auto min-h-[280px] bg-slate-950">
                   <Image
                     src="/images/shivam_behl.png"
                     alt="Mr. Shivam Behl - SDE-II, Microsoft"
                     fill
+                    sizes="(max-width: 640px) 100vw, 320px"
                     className="object-cover object-top group-hover:scale-105 transition-transform duration-500"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent sm:hidden"></div>
                 </div>
 
                 <div className="sm:col-span-7 p-6 flex flex-col justify-between space-y-4">
-                  <div>
-                    <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[10px] font-extrabold uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 mb-2">
-                      Keynote Speaker
+                  <div className="space-y-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[10px] font-extrabold uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                        Keynote Speaker • Microsoft
+                      </div>
+                      <a
+                        href="https://www.linkedin.com/in/shivam1103/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 text-[11px] font-semibold transition-all group/link"
+                        title="View Shivam Behl on LinkedIn"
+                      >
+                        <LinkedInIcon className="w-3.5 h-3.5 text-blue-400" />
+                        <span>LinkedIn</span>
+                        <ExternalLink className="w-3 h-3 text-slate-400 group-hover/link:text-blue-300" />
+                      </a>
                     </div>
-                    <h3 className="text-xl font-black text-white">
-                      Mr. Shivam Behl
-                    </h3>
-                    <p className="text-sm font-bold text-cyan-400">
-                      SDE-II, Microsoft
-                    </p>
-                    <p className="text-xs text-slate-300 mt-3 leading-relaxed">
-                      Software engineer at Microsoft specializing in cloud distributed platforms, agentic AI workflows, and modern AI-augmented developer velocity frameworks.
-                    </p>
+
+                    <div>
+                      <h3 className="text-xl font-black text-white">
+                        Mr. Shivam Behl
+                      </h3>
+                      <p className="text-sm font-bold text-cyan-400">
+                        Software Development Engineer II (SDE-II), Microsoft
+                      </p>
+                    </div>
+
+                    <div className="space-y-1 pt-1">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                        About Speaker
+                      </span>
+                      <p className="text-xs text-slate-300 leading-relaxed">
+                        Software Development Engineer (SDE-II) at Microsoft (TIET alumnus, 2021) building resilient cloud services and high-throughput distributed systems. Specializes in cloud infrastructure, agentic workflows, sentiment analysis, and explainable AI (XAI). A dedicated technical mentor who has empowered thousands of aspiring engineers on Data Structures, Algorithms, scalable System Design, and succeeding in tier-1 product engineering roles.
+                      </p>
+                    </div>
+
+                    {/* Expertise Tags */}
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {["Distributed Cloud", "Agentic Workflows", "System Design", "Developer Velocity"].map((tag) => (
+                        <span key={tag} className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-[10px] font-medium text-slate-300">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
                   </div>
 
                   <div className="pt-3 border-t border-slate-800 text-xs space-y-1.5 text-slate-400">
