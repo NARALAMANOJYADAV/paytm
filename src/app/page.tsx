@@ -24,13 +24,21 @@ import {
   Layers,
   ShieldCheck,
   Building,
-  Target
+  Target,
+  Smartphone,
+  Maximize2,
+  X,
+  QrCode,
+  Check,
+  Share2
 } from "lucide-react";
 import { loadStore } from "@/lib/store";
 
 export default function HomePage() {
   const [seatsLeft, setSeatsLeft] = useState(18);
   const [faqOpen, setFaqOpen] = useState<number | null>(null);
+  const [heroViewMode, setHeroViewMode] = useState<"poster" | "mobile">("poster");
+  const [posterModalOpen, setPosterModalOpen] = useState(false);
 
   // Live countdown state
   const [timeLeft, setTimeLeft] = useState({
@@ -140,15 +148,121 @@ export default function HomePage() {
     <div className="flex flex-col min-h-screen">
       
       {/* HERO SECTION */}
-      <section id="hero" className="relative min-h-[90vh] flex items-center justify-center overflow-hidden pt-8 pb-16 px-4 sm:px-6 lg:px-8 border-b border-slate-800/80">
+      <section id="hero" className="relative min-h-[90vh] flex items-center justify-center overflow-hidden pt-6 sm:pt-8 pb-16 px-4 sm:px-6 lg:px-8 border-b border-slate-800/80">
         {/* Futuristic glowing gradient background */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(14,165,233,0.15),rgba(255,255,255,0))] pointer-events-none"></div>
         <div className="absolute top-1/4 -left-48 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
         <div className="absolute bottom-10 -right-48 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none"></div>
 
-        <div className="relative max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+        <div className="relative max-w-7xl mx-auto w-full flex flex-col lg:grid lg:grid-cols-12 gap-8 lg:gap-12 items-center">
           
-          {/* Left Column: Details */}
+          {/* Mobile-Only Top Visual Showcase: Appears FIRST on phones */}
+          <div className="w-full lg:hidden flex flex-col items-center">
+            {/* View Switcher Pill */}
+            <div className="inline-flex items-center p-1 rounded-xl bg-slate-900/90 border border-slate-700/80 shadow-lg mb-3">
+              <button
+                type="button"
+                onClick={() => setHeroViewMode("poster")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  heroViewMode === "poster"
+                    ? "bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/30"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                Official Poster
+              </button>
+              <button
+                type="button"
+                onClick={() => setHeroViewMode("mobile")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  heroViewMode === "mobile"
+                    ? "bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/30"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                <Smartphone className="w-3.5 h-3.5" />
+                <span>Mobile Pass</span>
+              </button>
+            </div>
+
+            {/* Mobile Visual Container */}
+            {heroViewMode === "poster" ? (
+              <div 
+                onClick={() => setPosterModalOpen(true)}
+                className="w-full relative group rounded-2xl overflow-hidden bg-slate-900 border border-cyan-500/40 shadow-2xl cursor-pointer"
+              >
+                <div className="relative w-full aspect-[16/9] bg-slate-950">
+                  <Image
+                    src="/images/poster.jpg"
+                    alt="Prompt to Production - Paytm AI Workshop Official Poster"
+                    fill
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                    priority
+                    className="object-contain"
+                  />
+                  <div className="absolute inset-0 bg-slate-950/20 group-hover:bg-transparent transition-colors flex items-center justify-center">
+                    <span className="opacity-0 group-hover:opacity-100 transition-opacity bg-slate-950/80 text-cyan-300 border border-cyan-500/30 text-xs px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg">
+                      <Maximize2 className="w-3.5 h-3.5" /> Tap to view full screen
+                    </span>
+                  </div>
+                </div>
+                <div className="p-2.5 bg-slate-950/95 border-t border-slate-800 flex items-center justify-between text-xs">
+                  <span className="text-[11px] font-semibold text-slate-300">
+                    Conducted by <strong className="text-cyan-400">Paytm ❤️ Ai</strong>
+                  </span>
+                  <span className="text-[10px] text-cyan-400 font-bold flex items-center gap-1">
+                    <Maximize2 className="w-3 h-3" /> Zoom
+                  </span>
+                </div>
+              </div>
+            ) : (
+              /* Mobile View / Smartphone Mockup */
+              <div className="w-[300px] rounded-[36px] border-[5px] border-slate-700 bg-slate-950 p-3 shadow-2xl shadow-cyan-500/20 relative animate-in fade-in duration-300">
+                {/* Dynamic island notch */}
+                <div className="w-20 h-4 bg-slate-800 rounded-full mx-auto mb-2 flex items-center justify-center">
+                  <div className="w-2.5 h-2.5 rounded-full bg-slate-950 border border-slate-700"></div>
+                </div>
+                {/* Mini mobile screen header */}
+                <div className="text-center pb-2 border-b border-slate-800/80">
+                  <div className="text-[9px] font-bold uppercase text-cyan-400 tracking-wider">
+                    Prompt to Production Pass
+                  </div>
+                  <div className="text-xs font-black text-white">NBKRIST • Paytm AI</div>
+                </div>
+                {/* Mini Ticket Card */}
+                <div className="mt-2.5 p-3 rounded-xl bg-gradient-to-b from-cyan-950/40 via-slate-900 to-slate-950 border border-cyan-500/40 text-center space-y-2">
+                  <div className="flex justify-between items-center text-[9px] text-slate-400">
+                    <span className="font-mono text-cyan-300">#P2P-2026-00042</span>
+                    <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold">PAID ₹50</span>
+                  </div>
+                  <div className="py-1">
+                    <div className="text-sm font-black text-white">Manoj Narala</div>
+                    <div className="text-[10px] text-slate-400">23KB1A3064 • AI & DS (4th Year)</div>
+                  </div>
+                  <div className="w-24 h-24 mx-auto bg-white rounded-lg p-1.5 flex items-center justify-center shadow-md">
+                    <Image
+                      src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=P2P-2026-00042"
+                      alt="QR Ticket"
+                      width={90}
+                      height={90}
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <div className="text-[10px] text-slate-300 pt-1">
+                    📍 Seminar Hall, New CSE Block
+                  </div>
+                  <Link
+                    href="/dashboard"
+                    className="block w-full py-1.5 rounded-lg bg-cyan-500 text-slate-950 font-black text-[11px] uppercase tracking-wider shadow"
+                  >
+                    Open Live Mobile Pass
+                  </Link>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Left Column: Details (Main Content) */}
           <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
             
             {/* Institution Badge */}
@@ -174,7 +288,7 @@ export default function HomePage() {
                   Paytm AI Workshop
                 </span>
                 <span className="text-xs text-slate-400 font-medium">
-                  Full-day Industry Immersion
+                  Conducted by Paytm ❤️ Ai
                 </span>
               </div>
             </div>
@@ -265,38 +379,201 @@ export default function HomePage() {
             </p>
           </div>
 
-          {/* Right Column: Visual Poster Card */}
-          <div className="lg:col-span-5 flex justify-center">
-            <div className="relative group w-full max-w-md">
-              <div className="absolute -inset-1.5 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-3xl blur-xl opacity-40 group-hover:opacity-60 transition duration-500"></div>
-              
-              <div className="relative rounded-2xl overflow-hidden bg-slate-900 border border-cyan-500/40 shadow-2xl">
-                <Image
-                  src="/images/poster.jpg"
-                  alt="Prompt to Production - Paytm AI Workshop Official Poster"
-                  width={640}
-                  height={360}
-                  priority
-                  className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-700"
-                />
-                <div className="p-4 bg-slate-950/90 border-t border-slate-800 flex items-center justify-between text-xs">
-                  <div>
-                    <span className="font-bold text-white block">Official Event Poster</span>
-                    <span className="text-slate-400 text-[10px]">NBKRIST • IT & AI&DS Dept</span>
+          {/* Right Column: Visual Poster / Mobile Pass Showcase (Desktop view) */}
+          <div className="hidden lg:flex lg:col-span-5 flex-col items-center">
+            {/* View Switcher Controls */}
+            <div className="inline-flex items-center p-1 rounded-xl bg-slate-900/90 border border-slate-700 shadow-lg mb-4">
+              <button
+                type="button"
+                onClick={() => setHeroViewMode("poster")}
+                className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  heroViewMode === "poster"
+                    ? "bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/30"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                Official Poster
+              </button>
+              <button
+                type="button"
+                onClick={() => setHeroViewMode("mobile")}
+                className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  heroViewMode === "mobile"
+                    ? "bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/30"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                <Smartphone className="w-3.5 h-3.5" />
+                <span>Mobile Pass View</span>
+              </button>
+            </div>
+
+            {heroViewMode === "poster" ? (
+              <div className="relative group w-full max-w-md">
+                <div className="absolute -inset-1.5 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-3xl blur-xl opacity-40 group-hover:opacity-60 transition duration-500"></div>
+                
+                <div 
+                  onClick={() => setPosterModalOpen(true)}
+                  className="relative rounded-2xl overflow-hidden bg-slate-900 border border-cyan-500/40 shadow-2xl cursor-pointer"
+                >
+                  <div className="relative w-full aspect-[16/9] bg-slate-950">
+                    <Image
+                      src="/images/poster.jpg"
+                      alt="Prompt to Production - Paytm AI Workshop Official Poster"
+                      fill
+                      sizes="480px"
+                      priority
+                      className="object-contain group-hover:scale-105 transition-transform duration-700"
+                    />
+                    <div className="absolute inset-0 bg-slate-950/20 group-hover:bg-transparent transition-colors flex items-center justify-center">
+                      <span className="opacity-0 group-hover:opacity-100 transition-opacity bg-slate-950/90 text-cyan-300 border border-cyan-500/40 text-xs px-3.5 py-1.5 rounded-full flex items-center gap-2 shadow-2xl">
+                        <Maximize2 className="w-3.5 h-3.5" /> Click to view full poster
+                      </span>
+                    </div>
                   </div>
-                  <Link
-                    href="/register"
-                    className="inline-flex items-center gap-1 text-cyan-400 font-bold hover:underline"
-                  >
-                    Claim Seat
-                    <ChevronDown className="w-3.5 h-3.5 -rotate-90" />
-                  </Link>
+                  <div className="p-3.5 bg-slate-950/95 border-t border-slate-800 flex items-center justify-between text-xs">
+                    <div>
+                      <span className="font-bold text-white block">Official Event Poster</span>
+                      <span className="text-slate-400 text-[10px]">Conducted by Paytm ❤️ Ai</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setPosterModalOpen(true);
+                      }}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 font-bold hover:bg-cyan-500/20 transition-colors"
+                    >
+                      <Maximize2 className="w-3 h-3" />
+                      <span>Full Poster</span>
+                    </button>
+                  </div>
                 </div>
+              </div>
+            ) : (
+              /* Realistic Smartphone Mockup Showcase */
+              <div className="w-[320px] rounded-[44px] border-[6px] border-slate-700 bg-slate-950 p-3.5 shadow-2xl shadow-cyan-500/20 relative animate-in fade-in zoom-in-95 duration-300">
+                {/* Dynamic island notch */}
+                <div className="w-24 h-4 bg-slate-800 rounded-full mx-auto mb-3 flex items-center justify-center">
+                  <div className="w-2.5 h-2.5 rounded-full bg-slate-950 border border-slate-700"></div>
+                </div>
+
+                {/* Mobile screen content */}
+                <div className="space-y-3">
+                  <div className="text-center pb-2 border-b border-slate-800/80">
+                    <div className="text-[10px] font-bold uppercase text-cyan-400 tracking-wider">
+                      Prompt to Production
+                    </div>
+                    <div className="text-xs font-black text-white">Official Mobile Pass</div>
+                  </div>
+
+                  <div className="p-3.5 rounded-2xl bg-gradient-to-b from-cyan-950/50 via-slate-900 to-slate-950 border border-cyan-500/40 text-center space-y-2.5">
+                    <div className="flex justify-between items-center text-[10px] text-slate-400">
+                      <span className="font-mono text-cyan-300">#P2P-2026-00042</span>
+                      <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold">PAID ₹50</span>
+                    </div>
+
+                    <div>
+                      <div className="text-base font-black text-white">Manoj Narala</div>
+                      <div className="text-[11px] text-slate-400">23KB1A3064 • AI & DS (4th Year)</div>
+                    </div>
+
+                    <div className="w-28 h-28 mx-auto bg-white rounded-xl p-2 shadow-lg flex items-center justify-center">
+                      <Image
+                        src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=P2P-2026-00042"
+                        alt="QR Code"
+                        width={100}
+                        height={100}
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
+
+                    <div className="text-[11px] text-slate-300">
+                      📍 Seminar Hall, New CSE Block
+                    </div>
+
+                    <div className="pt-1">
+                      <Link
+                        href="/dashboard"
+                        className="block w-full py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-xs uppercase tracking-wider shadow-lg shadow-cyan-500/30 transition-all active:scale-95"
+                      >
+                        Open Live Pass Portal
+                      </Link>
+                    </div>
+                  </div>
+
+                  <div className="text-center text-[10px] text-slate-500">
+                    Auto-synced with Apple & Google Wallet
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* FULL POSTER LIGHTBOX MODAL */}
+      {posterModalOpen && (
+        <div 
+          onClick={() => setPosterModalOpen(false)}
+          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="relative max-w-5xl w-full bg-slate-900 rounded-2xl border border-cyan-500/50 shadow-2xl overflow-hidden flex flex-col max-h-[95vh]"
+          >
+            <div className="p-3 sm:p-4 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
+              <div>
+                <h3 className="font-extrabold text-sm sm:text-base text-white">
+                  Workshop on PROMPT TO PRODUCTION — Official Poster
+                </h3>
+                <p className="text-[10px] sm:text-xs text-slate-400">
+                  N.B.K.R. Institute of Science & Technology • Department of IT & AI&DS
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPosterModalOpen(false)}
+                className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="relative flex-1 min-h-[300px] sm:min-h-[500px] w-full bg-black overflow-auto p-2 flex items-center justify-center">
+              <Image
+                src="/images/poster.jpg"
+                alt="Prompt to Production Official Poster Full View"
+                width={1200}
+                height={675}
+                className="w-full h-auto max-h-[80vh] object-contain rounded-lg"
+              />
+            </div>
+
+            <div className="p-3 sm:p-4 bg-slate-950 border-t border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
+              <span className="text-slate-400 text-xs">
+                Wednesday, 30 September 2026 • 9:00 AM • Seminar Hall, New CSE Block
+              </span>
+              <div className="flex items-center gap-2">
+                <a
+                  href="/images/poster.jpg"
+                  download="P2P-Paytm-AI-Workshop-Poster.jpg"
+                  className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold transition-colors"
+                >
+                  Download Poster
+                </a>
+                <Link
+                  href="/register"
+                  onClick={() => setPosterModalOpen(false)}
+                  className="px-4 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold shadow-md shadow-cyan-500/25 transition-all"
+                >
+                  Register Now
+                </Link>
               </div>
             </div>
           </div>
         </div>
-      </section>
+      )}
 
       {/* SECTION 9: EVENT HIGHLIGHTS */}
       <section id="about" className="py-20 px-4 sm:px-6 lg:px-8 bg-slate-950 border-b border-slate-800/80">
@@ -461,6 +738,62 @@ export default function HomePage() {
               </div>
             </div>
 
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION: INSTITUTIONAL PATRONS & ORGANIZING LEADERSHIP (From Official Poster) */}
+      <section id="leadership" className="py-16 px-4 sm:px-6 lg:px-8 bg-slate-950 border-b border-slate-800/80">
+        <div className="max-w-7xl mx-auto space-y-10">
+          <div className="text-center max-w-3xl mx-auto space-y-2">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-300 text-xs font-bold uppercase tracking-wider">
+              <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" />
+              <span>Institutional Leadership</span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+              PATRONS & ORGANIZING COMMITTEE
+            </h2>
+            <p className="text-slate-400 text-xs sm:text-sm">
+              Organized by Department of IT and AI&DS, N.B.K.R. Institute of Science & Technology in association with ISTE.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 text-center space-y-2 hover:border-cyan-500/30 transition-all">
+              <div className="w-12 h-12 rounded-full bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center mx-auto text-cyan-400 font-bold text-sm">
+                NR
+              </div>
+              <h3 className="text-base font-extrabold text-white">Sri. N. Ramkumar</h3>
+              <p className="text-xs text-cyan-400 font-semibold">Correspondent</p>
+              <p className="text-[11px] text-slate-400">N.B.K.R. Institute of Science & Technology</p>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 text-center space-y-2 hover:border-cyan-500/30 transition-all">
+              <div className="w-12 h-12 rounded-full bg-blue-500/10 border border-blue-500/30 flex items-center justify-center mx-auto text-blue-400 font-bold text-sm">
+                MS
+              </div>
+              <h3 className="text-base font-extrabold text-white">Dr. M. Sreenivasulu</h3>
+              <p className="text-xs text-blue-400 font-semibold">Principal (i/c)</p>
+              <p className="text-[11px] text-slate-400">N.B.K.R. Institute of Science & Technology</p>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 text-center space-y-2 hover:border-cyan-500/30 transition-all">
+              <div className="w-12 h-12 rounded-full bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center mx-auto text-indigo-400 font-bold text-sm">
+                AN
+              </div>
+              <h3 className="text-base font-extrabold text-white">Dr. A. Narayana Rao</h3>
+              <p className="text-xs text-indigo-400 font-semibold">HOD, Department of IT & AI&DS</p>
+              <p className="text-[11px] text-slate-400">Program Convener</p>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 text-center space-y-2 hover:border-cyan-500/30 transition-all">
+              <div className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center mx-auto text-emerald-400 font-bold text-sm">
+                SR
+              </div>
+              <h3 className="text-base font-extrabold text-white">Mr. M. Sivapratap Reddy</h3>
+              <p className="text-xs text-emerald-400 font-semibold">Program Coordinator</p>
+              <p className="text-[11px] text-slate-400">Department of IT & AI&DS</p>
+            </div>
           </div>
         </div>
       </section>

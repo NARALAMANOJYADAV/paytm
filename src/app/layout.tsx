@@ -5,6 +5,7 @@ import { AuthProvider } from "@/lib/context/AuthContext";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import BroadcastBanner from "@/components/BroadcastBanner";
+import MobileBottomNav from "@/components/MobileBottomNav";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -47,8 +48,9 @@ export default function RootLayout({
         <AuthProvider>
           <BroadcastBanner />
           <Navbar />
-          <main className="flex-1 flex flex-col">{children}</main>
+          <main className="flex-1 flex flex-col pb-16 lg:pb-0">{children}</main>
           <Footer />
+          <MobileBottomNav />
         </AuthProvider>
       </body>
     </html>
