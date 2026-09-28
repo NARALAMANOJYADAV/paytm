@@ -33,6 +33,7 @@ import TicketCard from "@/components/TicketCard";
 import { 
   registerParticipant, 
   completePaymentAndIssueTicket, 
+  updateUserPassword,
   loadStore 
 } from "@/lib/store";
 import { useAuth } from "@/lib/context/AuthContext";
@@ -108,7 +109,7 @@ export default function RegisterPage() {
   // Validation
   const validateForm = () => {
     const errs: Record<string, string> = {};
-    if (!name.trim()) errs.name = "Name for certificate is required";
+    if (!name.trim()) errs.name = "Full name is required";
     if (!email.trim() || !email.includes("@")) errs.email = "Valid email is required";
     if (!mobile.trim() || mobile.length < 10) errs.mobile = "10-digit mobile number is required";
     if (!rollNumber.trim()) errs.rollNumber = "Roll number is required";
@@ -196,7 +197,8 @@ export default function RegisterPage() {
     }
 
     setAccountCreated(true);
-    login(email, "user");
+    updateUserPassword(email, password);
+    login(email, password, "user");
 
     // Celebrate and show digital ticket
     try {
@@ -291,15 +293,15 @@ export default function RegisterPage() {
                 <span>Personal Information</span>
               </h2>
               <p className="text-xs text-slate-400">
-                Ensure details match your college records for certificate issuance.
+                Ensure details match your official college records.
               </p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Name for Certificate */}
+              {/* Full Name */}
               <div className="sm:col-span-2">
                 <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Name for Certificate *
+                  Full Name *
                 </label>
                 <input
                   type="text"

@@ -125,6 +125,7 @@ export function registerParticipant(data: {
   hasLaptop: boolean;
   linkedinPortfolio?: string;
   fee: number;
+  password?: string;
 }): { registration: Registration; profile: ParticipantProfile; user: User } {
   const store = loadStore();
 
@@ -142,6 +143,7 @@ export function registerParticipant(data: {
     phone: data.mobile,
     role: "user",
     status: "active",
+    password: data.password || "password123",
     created_at: new Date().toISOString(),
   };
 
@@ -180,6 +182,23 @@ export function registerParticipant(data: {
   saveStore(store);
 
   return { registration: newRegistration, profile: newProfile, user: newUser };
+}
+
+/**
+ * Updates a registered user's account password
+ */
+export function updateUserPassword(emailOrUserId: string, password: string): boolean {
+  const store = loadStore();
+  const clean = emailOrUserId.trim().toLowerCase();
+  const user = store.users.find(
+    (u) => u.email.toLowerCase() === clean || u.id === emailOrUserId
+  );
+  if (user) {
+    user.password = password;
+    saveStore(store);
+    return true;
+  }
+  return false;
 }
 
 /**

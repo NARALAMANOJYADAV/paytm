@@ -34,7 +34,6 @@ export default function UserDashboardLayout({
     { name: "Resources", href: "/dashboard/resources", icon: BookOpen },
     { name: "My Team", href: "/dashboard/team", icon: Users },
     { name: "Project Submission", href: "/dashboard/submission", icon: Send },
-    { name: "Certificate", href: "/dashboard/certificate", icon: Award },
     { name: "Support Desk", href: "/dashboard/support", icon: HelpCircle },
   ];
 

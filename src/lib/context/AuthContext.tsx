@@ -4,6 +4,12 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { User, ParticipantProfile, Registration, Ticket, UserRole, CoordinatorPermission } from "../types";
 import { loadStore } from "../store";
 
+export interface LoginResponse {
+  success: boolean;
+  error?: string;
+  role?: UserRole;
+}
+
 interface AuthContextType {
   currentUser: User | null;
   currentProfile: ParticipantProfile | null;
@@ -12,7 +18,7 @@ interface AuthContextType {
   role: UserRole;
   isAuthenticated: boolean;
   permissions: CoordinatorPermission[];
-  login: (email: string, role?: UserRole) => boolean;
+  login: (identifier: string, password?: string, roleHint?: UserRole) => LoginResponse;
   logout: () => void;
   quickSwitchRole: (role: UserRole) => void;
   refreshAuth: () => void;
@@ -123,8 +129,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const { email, role: savedRole } = JSON.parse(saved);
         syncFromStore(email, savedRole);
       } else {
-        // Auto default to Manoj (participant) for instantaneous showcase preview
-        syncFromStore("student@nbkrist.org", "user");
+        // Guest mode by default: user must explicitly log in or register
+        syncFromStore();
       }
     } catch {
       syncFromStore();
@@ -138,28 +144,88 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener("store_updated", handleStoreUpdate);
   }, []);
 
-  const login = (email: string, roleHint: UserRole = "user") => {
+  const login = (
+    identifier: string,
+    password?: string,
+    roleHint: UserRole = "user"
+  ): LoginResponse => {
+    const cleanId = (identifier || "").trim();
+    const cleanPass = (password || "").trim();
+
+    if (!cleanId) {
+      return { success: false, error: "Please enter your ID, email, or roll number." };
+    }
+
+    // 1. COORDINATOR LOGIN: COORDINATOR567 | PASS: coordinator@890
+    if (
+      roleHint === "coordinator" ||
+      cleanId.toUpperCase() === "COORDINATOR567" ||
+      cleanId.toLowerCase() === "coordinator@nbkrist.org"
+    ) {
+      if (cleanId.toUpperCase() !== "COORDINATOR567" && cleanId.toLowerCase() !== "coordinator@nbkrist.org") {
+        return { success: false, error: "Invalid Coordinator ID. Official ID: COORDINATOR567" };
+      }
+      if (cleanPass !== "coordinator@890") {
+        return { success: false, error: "Incorrect password for Coordinator." };
+      }
+      syncFromStore("coordinator@nbkrist.org", "coordinator");
+      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ email: "coordinator@nbkrist.org", role: "coordinator" }));
+      return { success: true, role: "coordinator" };
+    }
+
+    // 2. ADMIN LOGIN: ADMIN345 | PASS: admin@678
+    if (
+      roleHint === "admin" ||
+      cleanId.toUpperCase() === "ADMIN345" ||
+      cleanId.toLowerCase() === "admin@nbkrist.org"
+    ) {
+      if (cleanId.toUpperCase() !== "ADMIN345" && cleanId.toLowerCase() !== "admin@nbkrist.org") {
+        return { success: false, error: "Invalid Admin ID. Official ID: ADMIN345" };
+      }
+      if (cleanPass !== "admin@678") {
+        return { success: false, error: "Incorrect password for Admin." };
+      }
+      syncFromStore("admin@nbkrist.org", "admin");
+      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ email: "admin@nbkrist.org", role: "admin" }));
+      return { success: true, role: "admin" };
+    }
+
+    // 3. PARTICIPANT LOGIN: Based on user registration form details
     const store = loadStore();
-    if (roleHint === "admin" || email.toLowerCase().includes("admin")) {
-      quickSwitchRole("admin");
-      return true;
+    const searchId = cleanId.toLowerCase();
+
+    // Match registered email OR roll number
+    let matchedUser = store.users.find((u) => u.email.toLowerCase() === searchId);
+    let matchedProfile = store.profiles.find((p) => p.roll_number.toLowerCase() === searchId);
+
+    if (!matchedUser && matchedProfile) {
+      const prof = matchedProfile;
+      matchedUser = store.users.find((u) => u.id === prof.user_id);
     }
-    if (roleHint === "coordinator" || email.toLowerCase().includes("coord")) {
-      quickSwitchRole("coordinator");
-      return true;
+    if (matchedUser && !matchedProfile) {
+      const usr = matchedUser;
+      matchedProfile = store.profiles.find((p) => p.user_id === usr.id);
     }
 
-    const matchedUser = store.users.find((u) => u.email.toLowerCase() === email.toLowerCase());
-    if (matchedUser) {
-      syncFromStore(matchedUser.email, "user");
-      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ email: matchedUser.email, role: "user" }));
-      return true;
+    if (!matchedUser) {
+      return {
+        success: false,
+        error: "No registered participant found with this Email or Roll Number. Please register via the registration form first.",
+      };
     }
 
-    // If new user email, log them in as a participant
-    syncFromStore(email, "user");
-    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ email, role: "user" }));
-    return true;
+    // Verify password set during registration (or default demo password)
+    const expectedPassword = matchedUser.password || "password123";
+    if (cleanPass && cleanPass !== expectedPassword) {
+      return {
+        success: false,
+        error: "Incorrect password. Please enter the password you created during registration.",
+      };
+    }
+
+    syncFromStore(matchedUser.email, "user");
+    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ email: matchedUser.email, role: "user" }));
+    return { success: true, role: "user" };
   };
 
   const logout = () => {

@@ -184,21 +184,19 @@ export default function DashboardOverviewPage() {
             </Link>
           </div>
 
-          {/* Certificate Quick Card */}
+          {/* AI Challenge & Submission Quick Card */}
           <div className="rounded-2xl bg-slate-900 border border-slate-800 p-5 space-y-3">
             <h3 className="text-sm font-bold text-white">
-              Certificate of Participation
+              AI Challenge & Build Submission
             </h3>
             <p className="text-xs text-slate-300 leading-relaxed">
-              {hasCertificate
-                ? "Your official certificate is generated! View and download your certified credential."
-                : "Certificates will be made available directly in this portal after attendance verification and challenge evaluation."}
+              Form your team, build hands-on with Paytm API & Microsoft frameworks, and submit your project GitHub repository and demo link.
             </p>
             <Link
-              href="/dashboard/certificate"
-              className="inline-flex items-center gap-2 text-xs font-bold text-emerald-400 hover:text-emerald-300 transition-colors pt-1"
+              href="/dashboard/submission"
+              className="inline-flex items-center gap-2 text-xs font-bold text-cyan-400 hover:text-cyan-300 transition-colors pt-1"
             >
-              <span>{hasCertificate ? "View & Download Certificate" : "Check Certificate Eligibility"}</span>
+              <span>Go to Project Submission</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>

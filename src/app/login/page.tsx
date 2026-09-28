@@ -7,55 +7,99 @@ import {
   Lock,
   Mail,
   ArrowRight,
-  GraduationCap,
-  QrCode,
   ShieldCheck,
-  Sparkles,
   KeyRound,
-  CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  QrCode,
+  GraduationCap,
+  Sparkles,
+  CheckCircle2
 } from "lucide-react";
 import { useAuth } from "@/lib/context/AuthContext";
 import { UserRole } from "@/lib/types";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, quickSwitchRole } = useAuth();
+  const { login } = useAuth();
   
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [selectedRole, setSelectedRole] = useState<UserRole>("user");
+  const [identifier, setIdentifier] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
+  const handleRoleChange = (role: UserRole) => {
+    setSelectedRole(role);
+    setError("");
+    if (role === "coordinator") {
+      setIdentifier("COORDINATOR567");
+      setPassword("");
+    } else if (role === "admin") {
+      setIdentifier("ADMIN345");
+      setPassword("");
+    } else {
+      setIdentifier("");
+      setPassword("");
+    }
+  };
+
+  const handleFillCredentials = (role: "coordinator" | "admin") => {
+    if (role === "coordinator") {
+      setSelectedRole("coordinator");
+      setIdentifier("COORDINATOR567");
+      setPassword("coordinator@890");
+      setError("");
+    } else if (role === "admin") {
+      setSelectedRole("admin");
+      setIdentifier("ADMIN345");
+      setPassword("admin@678");
+      setError("");
+    }
+  };
+
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim()) {
-      setError("Please enter your registered email");
+    setError("");
+
+    if (!identifier.trim()) {
+      setError(
+        selectedRole === "coordinator"
+          ? "Please enter your Coordinator ID"
+          : selectedRole === "admin"
+          ? "Please enter your Admin ID"
+          : "Please enter your registered Email or Roll Number"
+      );
+      return;
+    }
+
+    if (!password.trim()) {
+      setError("Please enter your account password");
       return;
     }
 
     setIsLoading(true);
-    setTimeout(() => {
-      login(email, selectedRole);
-      setIsLoading(false);
-      
-      if (selectedRole === "admin") router.push("/admin");
-      else if (selectedRole === "coordinator") router.push("/coordinator");
-      else router.push("/dashboard");
-    }, 400);
-  };
 
-  const handleQuickLogin = (role: UserRole) => {
-    quickSwitchRole(role);
-    if (role === "admin") router.push("/admin");
-    else if (role === "coordinator") router.push("/coordinator");
-    else router.push("/dashboard");
+    setTimeout(() => {
+      const res = login(identifier, password, selectedRole);
+      setIsLoading(false);
+
+      if (res.success) {
+        if (res.role === "admin") {
+          router.push("/admin");
+        } else if (res.role === "coordinator") {
+          router.push("/coordinator");
+        } else {
+          router.push("/dashboard");
+        }
+      } else {
+        setError(res.error || "Login failed. Please check your credentials.");
+      }
+    }, 300);
   };
 
   return (
     <div className="min-h-[85vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-slate-950">
-      <div className="max-w-md w-full space-y-8">
+      <div className="max-w-md w-full space-y-6 sm:space-y-8">
         
         {/* Header */}
         <div className="text-center space-y-2">
@@ -67,61 +111,18 @@ export default function LoginPage() {
             Account Access
           </h1>
           <p className="text-xs text-slate-400">
-            Sign in to access your digital ticket, coordinator scanner, or admin controls.
+            Sign in to access your digital ticket, workshop dashboard, or staff controls.
           </p>
         </div>
 
-        {/* 1-Click Quick Demo Switcher Card */}
-        <div className="rounded-2xl bg-gradient-to-r from-slate-900 via-slate-900/90 to-slate-900 border border-cyan-500/30 p-4 space-y-3 shadow-xl">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5" />
-              1-Click Demo Login
-            </span>
-            <span className="text-[10px] text-slate-400">Instant Access</span>
-          </div>
-
-          <div className="grid grid-cols-3 gap-2">
-            <button
-              type="button"
-              onClick={() => handleQuickLogin("user")}
-              className="p-2.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-center transition-all group"
-            >
-              <GraduationCap className="w-5 h-5 text-cyan-400 mx-auto group-hover:scale-110 transition-transform" />
-              <span className="text-[11px] font-bold text-white block mt-1">Student</span>
-              <span className="text-[9px] text-slate-400 block truncate">Manoj</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleQuickLogin("coordinator")}
-              className="p-2.5 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 text-center transition-all group"
-            >
-              <QrCode className="w-5 h-5 text-purple-400 mx-auto group-hover:scale-110 transition-transform" />
-              <span className="text-[11px] font-bold text-white block mt-1">Coordinator</span>
-              <span className="text-[9px] text-slate-400 block truncate">Chaitanya</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleQuickLogin("admin")}
-              className="p-2.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-center transition-all group"
-            >
-              <ShieldCheck className="w-5 h-5 text-red-400 mx-auto group-hover:scale-110 transition-transform" />
-              <span className="text-[11px] font-bold text-white block mt-1">Admin</span>
-              <span className="text-[9px] text-slate-400 block truncate">Dr. Rao</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Standard Credentials Form */}
+        {/* Credentials Form */}
         <form
           onSubmit={handleLogin}
           className="rounded-3xl bg-slate-900 border border-slate-800 p-6 sm:p-8 space-y-5 shadow-2xl"
         >
           {error && (
-            <div className="p-3 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-300 text-xs flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+            <div className="p-3.5 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-300 text-xs flex items-center gap-2.5 animate-in fade-in duration-200">
+              <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-400" />
               <span>{error}</span>
             </div>
           )}
@@ -134,85 +135,143 @@ export default function LoginPage() {
             <div className="grid grid-cols-3 gap-2 bg-slate-950 p-1.5 rounded-xl border border-slate-800">
               <button
                 type="button"
-                onClick={() => setSelectedRole("user")}
-                className={`py-1.5 text-xs font-bold rounded-lg transition-all ${
+                onClick={() => handleRoleChange("user")}
+                className={`py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
                   selectedRole === "user"
-                    ? "bg-cyan-500 text-slate-950 shadow-md"
+                    ? "bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20"
                     : "text-slate-400 hover:text-white"
                 }`}
               >
-                Participant
+                <GraduationCap className="w-3.5 h-3.5" />
+                <span>Participant</span>
               </button>
               <button
                 type="button"
-                onClick={() => setSelectedRole("coordinator")}
-                className={`py-1.5 text-xs font-bold rounded-lg transition-all ${
+                onClick={() => handleRoleChange("coordinator")}
+                className={`py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
                   selectedRole === "coordinator"
-                    ? "bg-purple-500 text-white shadow-md"
+                    ? "bg-purple-500 text-white shadow-md shadow-purple-500/20"
                     : "text-slate-400 hover:text-white"
                 }`}
               >
-                Coordinator
+                <QrCode className="w-3.5 h-3.5" />
+                <span>Coordinator</span>
               </button>
               <button
                 type="button"
-                onClick={() => setSelectedRole("admin")}
-                className={`py-1.5 text-xs font-bold rounded-lg transition-all ${
+                onClick={() => handleRoleChange("admin")}
+                className={`py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
                   selectedRole === "admin"
-                    ? "bg-red-500 text-white shadow-md"
+                    ? "bg-red-500 text-white shadow-md shadow-red-500/20"
                     : "text-slate-400 hover:text-white"
                 }`}
               >
-                Admin
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>Admin</span>
               </button>
             </div>
           </div>
 
-          {/* Email */}
+          {/* Identifier Input */}
           <div className="space-y-1">
             <label className="block text-xs font-semibold text-slate-300">
-              Email Address
+              {selectedRole === "coordinator"
+                ? "Coordinator ID"
+                : selectedRole === "admin"
+                ? "Admin ID"
+                : "Registered Email or Roll Number"}
             </label>
             <div className="relative">
               <input
-                type="email"
+                type="text"
                 required
                 placeholder={
-                  selectedRole === "admin"
-                    ? "admin@nbkrist.org"
-                    : selectedRole === "coordinator"
-                    ? "coordinator@nbkrist.org"
-                    : "student@nbkrist.org"
+                  selectedRole === "coordinator"
+                    ? "e.g. COORDINATOR567"
+                    : selectedRole === "admin"
+                    ? "e.g. ADMIN345"
+                    : "e.g. student@nbkrist.org or 23B91A1242"
                 }
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full pl-9 pr-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white text-sm focus:border-cyan-400 focus:outline-none"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
+                className="w-full pl-9 pr-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white text-sm focus:border-cyan-400 focus:outline-none placeholder:text-slate-600 font-medium"
               />
               <Mail className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
             </div>
+            {selectedRole === "user" && (
+              <p className="text-[10px] text-slate-400 mt-1">
+                Enter the email address or college roll number entered during registration.
+              </p>
+            )}
           </div>
 
-          {/* Password */}
+          {/* Password Input */}
           <div className="space-y-1">
             <div className="flex items-center justify-between">
               <label className="block text-xs font-semibold text-slate-300">
                 Password
               </label>
-              <Link href="#" className="text-[11px] text-cyan-400 hover:underline">
-                Forgot password?
-              </Link>
             </div>
             <div className="relative">
               <input
                 type="password"
+                required
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-9 pr-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white text-sm focus:border-cyan-400 focus:outline-none"
+                className="w-full pl-9 pr-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white text-sm focus:border-cyan-400 focus:outline-none placeholder:text-slate-600"
               />
               <KeyRound className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
             </div>
+            {selectedRole === "user" ? (
+              <p className="text-[10px] text-slate-400 mt-1">
+                Enter the account password created when completing your workshop registration.
+              </p>
+            ) : null}
           </div>
+
+          {/* Staff Credentials Helper Card */}
+          {selectedRole === "coordinator" && (
+            <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/30 text-xs space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-purple-300 text-[11px] uppercase tracking-wider">
+                  Coordinator Credentials
+                </span>
+                <button
+                  type="button"
+                  onClick={() => handleFillCredentials("coordinator")}
+                  className="text-[10px] text-purple-400 underline hover:text-purple-300 font-bold"
+                >
+                  Auto-fill
+                </button>
+              </div>
+              <div className="font-mono text-[11px] text-slate-300 flex flex-col gap-0.5">
+                <div>ID: <strong className="text-white">COORDINATOR567</strong></div>
+                <div>PASS: <strong className="text-white">coordinator@890</strong></div>
+              </div>
+            </div>
+          )}
+
+          {selectedRole === "admin" && (
+            <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-xs space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-red-300 text-[11px] uppercase tracking-wider">
+                  Admin Credentials
+                </span>
+                <button
+                  type="button"
+                  onClick={() => handleFillCredentials("admin")}
+                  className="text-[10px] text-red-400 underline hover:text-red-300 font-bold"
+                >
+                  Auto-fill
+                </button>
+              </div>
+              <div className="font-mono text-[11px] text-slate-300 flex flex-col gap-0.5">
+                <div>ID: <strong className="text-white">ADMIN345</strong></div>
+                <div>PASS: <strong className="text-white">admin@678</strong></div>
+              </div>
+            </div>
+          )}
 
           <button
             type="submit"
@@ -223,7 +282,7 @@ export default function LoginPage() {
               <span>AUTHENTICATING...</span>
             ) : (
               <>
-                <span>SIGN IN TO DASHBOARD</span>
+                <span>SIGN IN TO PORTAL</span>
                 <ArrowRight className="w-4 h-4" />
               </>
             )}

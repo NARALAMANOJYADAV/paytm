@@ -32,6 +32,7 @@ export interface User {
   phone: string;
   role: UserRole;
   status: 'active' | 'inactive';
+  password?: string;
   created_at: string;
 }
 
