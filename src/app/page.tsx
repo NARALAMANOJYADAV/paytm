@@ -666,7 +666,7 @@ export default function HomePage() {
               <div className="grid grid-cols-1 sm:grid-cols-12">
                 <div className="sm:col-span-5 relative h-64 sm:h-auto min-h-[220px]">
                   <Image
-                    src="/images/suman_mandal.jpg"
+                    src="/images/suman_mandal.png"
                     alt="Mr. Suman Mandal - Program Lead, Paytm"
                     fill
                     className="object-cover object-top group-hover:scale-105 transition-transform duration-500"
@@ -713,7 +713,7 @@ export default function HomePage() {
               <div className="grid grid-cols-1 sm:grid-cols-12">
                 <div className="sm:col-span-5 relative h-64 sm:h-auto min-h-[220px]">
                   <Image
-                    src="/images/shivam_behl.jpg"
+                    src="/images/shivam_behl.png"
                     alt="Mr. Shivam Behl - SDE-II, Microsoft"
                     fill
                     className="object-cover object-top group-hover:scale-105 transition-transform duration-500"
