@@ -669,7 +669,7 @@ export default function HomePage() {
                     src="/images/suman_mandal.jpg"
                     alt="Mr. Suman Mandal - Program Lead, Paytm"
                     fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-500"
+                    className="object-cover object-top group-hover:scale-105 transition-transform duration-500"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent sm:hidden"></div>
                 </div>
@@ -716,7 +716,7 @@ export default function HomePage() {
                     src="/images/shivam_behl.jpg"
                     alt="Mr. Shivam Behl - SDE-II, Microsoft"
                     fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-500"
+                    className="object-cover object-top group-hover:scale-105 transition-transform duration-500"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent sm:hidden"></div>
                 </div>

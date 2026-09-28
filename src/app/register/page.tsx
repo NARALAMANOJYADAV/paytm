@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import confetti from "canvas-confetti";
@@ -25,7 +25,9 @@ import {
   Phone,
   FileBadge,
   Eye,
-  EyeOff
+  EyeOff,
+  Copy,
+  Check
 } from "lucide-react";
 import TicketCard from "@/components/TicketCard";
 import { 
@@ -35,6 +37,7 @@ import {
 } from "@/lib/store";
 import { useAuth } from "@/lib/context/AuthContext";
 import { ParticipantProfile } from "@/lib/types";
+import { generateWorkshopUpiQr } from "@/lib/qr";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -67,6 +70,12 @@ export default function RegisterPage() {
   const [isProcessingPayment, setIsProcessingPayment] = useState<boolean>(false);
   const [activePaymentMethod, setActivePaymentMethod] = useState<string>("upi");
   
+  // Dynamic UPI QR code states (9491803089@ptaxis)
+  const [upiQrDataUrl, setUpiQrDataUrl] = useState<string>("");
+  const [upiPaymentUri, setUpiPaymentUri] = useState<string>("");
+  const [copiedUpi, setCopiedUpi] = useState<boolean>(false);
+  const [utrNumber, setUtrNumber] = useState<string>("");
+
   // Stored registration record
   const [createdRegId, setCreatedRegId] = useState<string>("");
   const [createdRegNumber, setCreatedRegNumber] = useState<string>("");
@@ -81,6 +90,20 @@ export default function RegisterPage() {
 
   // Fee calculation: ISTE = ₹50, Non-ISTE = ₹100
   const fee = isIsteMember ? 50 : 100;
+
+  // Generate dynamic UPI QR Code whenever ISTE status changes
+  useEffect(() => {
+    generateWorkshopUpiQr(isIsteMember).then((res) => {
+      setUpiQrDataUrl(res.dataUrl);
+      setUpiPaymentUri(res.upiUri);
+    });
+  }, [isIsteMember]);
+
+  const handleCopyUpi = () => {
+    navigator.clipboard.writeText("9491803089@ptaxis");
+    setCopiedUpi(true);
+    setTimeout(() => setCopiedUpi(false), 2000);
+  };
 
   // Validation
   const validateForm = () => {
@@ -577,46 +600,147 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            {/* Payment Method Selector */}
-            <div className="space-y-3">
-              <label className="block text-xs font-semibold text-slate-300">
-                Select Razorpay Payment Gateway Method
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setActivePaymentMethod("upi")}
-                  className={`p-3.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all ${
-                    activePaymentMethod === "upi"
-                      ? "bg-blue-500/20 text-blue-300 border-blue-400 shadow-md shadow-blue-500/20"
-                      : "bg-slate-950 text-slate-400 border-slate-800"
-                  }`}
-                >
-                  <Smartphone className="w-4 h-4 text-blue-400" />
-                  <span>UPI (GPay / PhonePe / Paytm)</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setActivePaymentMethod("card")}
-                  className={`p-3.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all ${
-                    activePaymentMethod === "card"
-                      ? "bg-blue-500/20 text-blue-300 border-blue-400 shadow-md shadow-blue-500/20"
-                      : "bg-slate-950 text-slate-400 border-slate-800"
-                  }`}
-                >
-                  <CreditCard className="w-4 h-4 text-cyan-400" />
-                  <span>Debit / Credit Card / NetBanking</span>
-                </button>
+            {/* OFFICIAL DYNAMIC UPI QR PAYMENT CARD */}
+            <div className="rounded-2xl bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 border-2 border-cyan-500/40 p-4 sm:p-6 space-y-4 shadow-xl">
+              
+              {/* Header with Paytm & UPI Badges */}
+              <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-800">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-blue-500/20 border border-blue-400/30 flex items-center justify-center">
+                    <QrCode className="w-4 h-4 text-cyan-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-black text-white text-sm">Official UPI Payment</h3>
+                    <p className="text-[10px] text-slate-400">Paytm • PhonePe • Google Pay • BHIM</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                    Paytm AI
+                  </span>
+                  <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                    {isIsteMember ? "₹50 (ISTE Member)" : "₹100 (Non-ISTE)"}
+                  </span>
+                </div>
               </div>
+
+              {/* QR Code and Payment Details Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-12 gap-5 items-center">
+                
+                {/* QR Code Graphic Column */}
+                <div className="sm:col-span-5 flex flex-col items-center justify-center space-y-2">
+                  <div className="relative p-2.5 bg-white rounded-2xl shadow-xl shadow-cyan-500/10 border-4 border-cyan-500/30">
+                    {upiQrDataUrl ? (
+                      <img
+                        src={upiQrDataUrl}
+                        alt={`UPI QR Code ₹${fee}`}
+                        className="w-44 h-44 object-contain rounded-lg"
+                      />
+                    ) : (
+                      <div className="w-44 h-44 flex items-center justify-center bg-slate-950 text-cyan-400 font-mono text-xs">
+                        Generating QR...
+                      </div>
+                    )}
+                    {/* Center badge */}
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      <div className="w-9 h-9 rounded-full bg-slate-950 border-2 border-cyan-400 flex items-center justify-center shadow-lg">
+                        <span className="text-[9px] font-black text-cyan-400">P2P</span>
+                      </div>
+                    </div>
+                  </div>
+                  <span className="text-[11px] text-slate-400 font-medium text-center">
+                    Scan with any UPI App to Pay <strong className="text-white">₹{fee}</strong>
+                  </span>
+                </div>
+
+                {/* UPI Details & Actions Column */}
+                <div className="sm:col-span-7 space-y-3">
+                  {/* UPI ID Box */}
+                  <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-1">
+                    <span className="text-[10px] uppercase font-bold text-slate-400">
+                      Official UPI ID:
+                    </span>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-mono text-xs sm:text-sm font-bold text-cyan-300 break-all select-all">
+                        9491803089@ptaxis
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleCopyUpi}
+                        className="flex-shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700 hover:border-cyan-400 text-[11px] font-semibold text-slate-200 transition-colors"
+                      >
+                        {copiedUpi ? (
+                          <>
+                            <Check className="w-3 h-3 text-emerald-400" />
+                            <span className="text-emerald-400">Copied!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3 h-3 text-cyan-400" />
+                            <span>Copy</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Fee Breakdown Info */}
+                  <div className="text-xs space-y-1 text-slate-300 bg-slate-950/60 p-3 rounded-xl border border-slate-800">
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Tier:</span>
+                      <span className="font-bold text-white">
+                        {isIsteMember ? "ISTE Student Subsidized" : "Non-ISTE Student"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Amount:</span>
+                      <span className="font-black text-cyan-300 font-mono text-sm">
+                        ₹{fee}.00
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-[11px]">
+                      <span className="text-slate-400">Note:</span>
+                      <span className="text-slate-300 truncate max-w-[180px]">
+                        {isIsteMember ? "P2P Workshop ISTE Fee" : "P2P Workshop Non-ISTE"}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Mobile Deep Link button */}
+                  {upiPaymentUri && (
+                    <a
+                      href={upiPaymentUri}
+                      className="sm:hidden block w-full text-center py-2.5 rounded-xl bg-blue-600/30 hover:bg-blue-600/40 border border-blue-500/50 text-blue-300 font-bold text-xs shadow transition-all"
+                    >
+                      📱 Tap to Pay ₹{fee} directly via UPI App
+                    </a>
+                  )}
+
+                  {/* UTR / Ref No Input (Optional) */}
+                  <div className="space-y-1">
+                    <label className="block text-[11px] font-semibold text-slate-400">
+                      Transaction UTR / Reference No. (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 427819284910"
+                      value={utrNumber}
+                      onChange={(e) => setUtrNumber(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs font-mono focus:border-cyan-400 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+              </div>
+
             </div>
 
             {/* Action Buttons */}
-            <div className="flex items-center gap-3 pt-2">
+            <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
               <button
                 type="button"
                 onClick={() => setCurrentStep(1)}
-                className="px-5 py-3.5 rounded-xl bg-slate-950 hover:bg-slate-800 text-slate-300 border border-slate-800 font-bold text-xs"
+                className="w-full sm:w-auto px-5 py-3.5 rounded-xl bg-slate-950 hover:bg-slate-800 text-slate-300 border border-slate-800 font-bold text-xs"
               >
                 Back to Edit
               </button>
@@ -625,16 +749,16 @@ export default function RegisterPage() {
                 type="button"
                 disabled={isProcessingPayment}
                 onClick={handleInitiatePayment}
-                className="flex-1 py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-black text-sm uppercase tracking-wider shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                className="w-full sm:flex-1 py-4 px-6 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-black text-sm uppercase tracking-wider shadow-xl shadow-emerald-500/25 transition-all flex items-center justify-center gap-2 disabled:opacity-50 active:scale-98"
               >
                 {isProcessingPayment ? (
                   <>
                     <span className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin"></span>
-                    <span>VERIFYING RAZORPAY SIGNATURE...</span>
+                    <span>VERIFYING ₹{fee} PAYMENT...</span>
                   </>
                 ) : (
                   <>
-                    <span>PAY ₹{fee} VIA RAZORPAY</span>
+                    <span>I HAVE PAID ₹{fee} • CONFIRM & ISSUE TICKET</span>
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}
