@@ -32,9 +32,7 @@ export default function Navbar() {
     { name: "Speakers", href: "/#speakers" },
     { name: "Learn", href: "/#learn" },
     { name: "Schedule", href: "/#schedule" },
-    { name: "Leaderboard", href: "/leaderboard" },
     { name: "FAQ", href: "/#faq" },
-    { name: "Verify Cert", href: "/verify/CERT-P2P-2026-081" },
   ];
 
   const getDashboardHref = () => {
