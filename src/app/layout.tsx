@@ -23,7 +23,22 @@ const serif = Instrument_Serif({
   weight: "400",
 });
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://feat-real-backend-redesign.d3o55sxplfs509.amplifyapp.com";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
+  openGraph: {
+    type: "website",
+    siteName: "Prompt to Production",
+    title: "Prompt to Production · Paytm AI Workshop at NBKRIST",
+    description: "Hands-on Generative AI workshop & build challenge · Wed, 30 Sep 2026 · Seminar Hall, New CSE Block · ₹50 ISTE / ₹100 · Register now",
+    locale: "en_IN",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Prompt to Production · Paytm AI Workshop at NBKRIST",
+    description: "Hands-on Generative AI workshop & build challenge · Wed, 30 Sep 2026 · Register now",
+  },
   title: "Prompt to Production | Paytm AI Workshop – NBKRIST",
   description:
     "Official event platform for 'Prompt to Production' Paytm AI Workshop, organized by Department of IT & AI&DS, N.B.K.R. Institute of Science & Technology in association with ISTE. 30 September 2026.",
