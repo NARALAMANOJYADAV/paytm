@@ -1,141 +1,227 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { HelpCircle, Send, MessageSquare, CheckCircle2 } from "lucide-react";
-import { loadStore, replySupportTicket } from "@/lib/store";
+import React, { useState } from "react";
+import { Send, CheckCircle2 } from "lucide-react";
+import { useStore, replySupportTicket, setSupportStatus } from "@/lib/store";
 import { SupportTicket } from "@/lib/types";
 
-export default function AdminSupportPage() {
-  const [tickets, setTickets] = useState<SupportTicket[]>([]);
-  const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
-  const [reply, setReply] = useState("");
+const STATUSES: { value: SupportTicket["status"]; label: string }[] = [
+  { value: "open", label: "Open" },
+  { value: "in_progress", label: "In progress" },
+  { value: "resolved", label: "Resolved" },
+  { value: "closed", label: "Closed" },
+];
 
-  const refreshList = () => {
-    const store = loadStore();
-    setTickets(store.supportTickets);
-    if (selectedTicket) {
-      const up = store.supportTickets.find((t) => t.id === selectedTicket.id);
-      setSelectedTicket(up || null);
+const formatTime = (iso: string) => {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime())
+    ? ""
+    : d.toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
+};
+
+const statusTag = (status: SupportTicket["status"]) => {
+  switch (status) {
+    case "resolved":
+      return "tag-ok";
+    case "closed":
+      return "tag-off";
+    default:
+      return "tag-pending";
+  }
+};
+
+export default function AdminSupportPage() {
+  const store = useStore();
+  const tickets = store.supportTickets;
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const selectedTicket = tickets.find((t) => t.id === selectedId) ?? null;
+  const [reply, setReply] = useState("");
+  const [busy, setBusy] = useState<"reply" | "status" | null>(null);
+  const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(null);
+
+  const regNumber = (id?: string) => (id ? store.registrations.find((r) => r.id === id)?.registration_number : undefined);
+
+  const handleReply = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedTicket || !reply.trim()) return;
+    setBusy("reply");
+    setNotice(null);
+    try {
+      await replySupportTicket(selectedTicket.id, reply.trim());
+      setReply("");
+      setNotice({ ok: true, text: "Response sent." });
+    } catch (err) {
+      setNotice({ ok: false, text: err instanceof Error ? err.message : "Could not send the response." });
+    } finally {
+      setBusy(null);
     }
   };
 
-  useEffect(() => {
-    refreshList();
-  }, []);
-
-  const handleReply = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedTicket || !reply.trim()) return;
-
-    replySupportTicket(selectedTicket.id, {
-      senderName: "Dr. S. K. Rao (Head of Dept)",
-      senderRole: "admin",
-      message: reply.trim(),
-    });
-
-    setReply("");
-    refreshList();
+  const handleStatus = async (status: SupportTicket["status"]) => {
+    if (!selectedTicket || status === selectedTicket.status) return;
+    setBusy("status");
+    setNotice(null);
+    try {
+      await setSupportStatus(selectedTicket.id, status);
+      setNotice({ ok: true, text: `Ticket marked ${status.replace("_", " ")}.` });
+    } catch (err) {
+      setNotice({ ok: false, text: err instanceof Error ? err.message : "Could not update the status." });
+    } finally {
+      setBusy(null);
+    }
   };
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl font-black text-white flex items-center gap-2">
-          <HelpCircle className="w-6 h-6 text-red-400" />
-          <span>Master Support Desk</span>
-        </h1>
-        <p className="text-xs text-slate-400">
+      <header className="frame bg-paper p-5 sm:p-6">
+        <h1 className="page-title text-ink">Master Support Desk</h1>
+        <p className="mt-2 text-sm text-ink-2">
           Global support inbox covering payments, registration issues, ticket replacements, and venue queries.
         </p>
-      </div>
+      </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        
         {/* Ticket List */}
-        <div className="lg:col-span-5 space-y-2.5">
+        <ul className="lg:col-span-5 planes grid-cols-1" aria-label="Support tickets">
           {tickets.map((t) => {
             const isSelected = selectedTicket?.id === t.id;
             return (
-              <div
-                key={t.id}
-                onClick={() => setSelectedTicket(t)}
-                className={`p-4 rounded-2xl border cursor-pointer transition-all ${
-                  isSelected
-                    ? "bg-red-950/40 border-red-500 shadow-md"
-                    : "bg-slate-900 border-slate-800 hover:border-slate-700"
-                }`}
-              >
-                <div className="flex items-center justify-between text-xs mb-1">
-                  <span className="font-mono font-bold text-cyan-300">{t.ticket_code}</span>
-                  <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-slate-800 text-slate-300">
-                    {t.status}
+              <li key={t.id} className={isSelected ? "bg-paper-2" : ""}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedId(t.id);
+                    setNotice(null);
+                  }}
+                  aria-current={isSelected ? "true" : undefined}
+                  className="relative w-full text-left p-4 pl-5 min-h-11 transition-colors hover:bg-paper-2"
+                >
+                  {isSelected && <span className="absolute left-0 top-0 bottom-0 w-1 bg-sky" aria-hidden="true" />}
+                  <span className="flex items-center justify-between gap-2 mb-1.5">
+                    <span className="font-mono text-sm font-bold text-accent">{t.ticket_code}</span>
+                    <span className={`tag ${statusTag(t.status)}`}>{t.status.replace("_", " ")}</span>
                   </span>
-                </div>
-                <h3 className="text-xs font-bold text-white">{t.subject}</h3>
-                <div className="flex items-center justify-between text-[10px] text-slate-400 mt-2">
-                  <span>{t.user_name}</span>
-                  <span>{t.category}</span>
-                </div>
-              </div>
+                  <span className="block text-sm font-bold text-ink">{t.subject}</span>
+                  <span className="flex items-center justify-between gap-2 text-xs text-ink-2 mt-2">
+                    <span>{t.user_name}</span>
+                    <span className="uppercase tracking-wide">{t.category}</span>
+                  </span>
+                </button>
+              </li>
             );
           })}
-        </div>
+          {tickets.length === 0 && <li className="p-6 text-sm text-ink-2">No support tickets.</li>}
+        </ul>
 
         {/* Conversation details */}
         <div className="lg:col-span-7">
           {selectedTicket ? (
-            <div className="rounded-3xl bg-slate-900 border border-slate-800 p-6 space-y-5 shadow-xl">
-              <div className="pb-3 border-b border-slate-800">
-                <span className="text-[10px] text-red-400 font-bold uppercase block">
-                  {selectedTicket.ticket_code} • {selectedTicket.category}
-                </span>
-                <h2 className="text-base font-bold text-white mt-1">{selectedTicket.subject}</h2>
-                <p className="text-xs text-slate-400">From: {selectedTicket.user_name} ({selectedTicket.registration_id})</p>
-              </div>
-
-              <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 text-xs text-slate-200">
-                {selectedTicket.message}
-              </div>
-
-              {/* Thread history */}
-              <div className="space-y-2">
-                <span className="text-[10px] font-bold uppercase text-slate-400 block">Responses</span>
-                {selectedTicket.responses.map((r) => (
-                  <div key={r.id} className="p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs space-y-1">
-                    <div className="flex justify-between text-[10px] text-cyan-300 font-bold">
-                      <span>{r.sender_name} ({r.sender_role})</span>
-                      <span className="text-slate-500">{new Date(r.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                    </div>
-                    <p className="text-slate-300">{r.message}</p>
+            <section className="frame bg-paper">
+              <div className="p-5 sm:p-6 rule-b">
+                <p className="font-mono text-xs font-bold text-ink-3 uppercase">
+                  {selectedTicket.ticket_code} / {selectedTicket.category}
+                </p>
+                <h2 className="text-xl font-semibold wide text-ink mt-1">{selectedTicket.subject}</h2>
+                <p className="text-sm text-ink-2 mt-1">
+                  From: {selectedTicket.user_name || "Unknown user"}
+                  {regNumber(selectedTicket.registration_id) && (
+                    <>
+                      {" "}(<span className="font-mono">{regNumber(selectedTicket.registration_id)}</span>)
+                    </>
+                  )}
+                  {" • "}
+                  <span className="font-mono text-xs">{formatTime(selectedTicket.created_at)}</span>
+                </p>
+                <div className="mt-4 flex flex-col sm:flex-row sm:items-end gap-2">
+                  <div>
+                    <label htmlFor="ticket-status" className="field-label">Status</label>
+                    <select
+                      id="ticket-status"
+                      value={selectedTicket.status}
+                      disabled={busy === "status"}
+                      aria-busy={busy === "status"}
+                      onChange={(e) => handleStatus(e.target.value as SupportTicket["status"])}
+                      className="field"
+                    >
+                      {STATUSES.map((st) => (
+                        <option key={st.value} value={st.value}>{st.label}</option>
+                      ))}
+                    </select>
                   </div>
-                ))}
+                </div>
               </div>
 
-              <form onSubmit={handleReply} className="pt-3 border-t border-slate-800 space-y-3">
+              <div className="p-5 sm:p-6 space-y-5">
+                <div className="plane-field frame p-4 text-sm text-ink whitespace-pre-wrap">{selectedTicket.message}</div>
+                {selectedTicket.attachment_url && (
+                  <a
+                    href={selectedTicket.attachment_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex text-sm font-bold text-ink underline underline-offset-4 decoration-2 decoration-sky"
+                  >
+                    Open attachment
+                  </a>
+                )}
+
+                {/* Thread history */}
+                <div className="space-y-2">
+                  <h3 className="text-sm font-semibold text-ink">Responses</h3>
+                  {selectedTicket.responses.length === 0 && (
+                    <p className="text-sm text-ink-2">No responses yet.</p>
+                  )}
+                  {selectedTicket.responses.map((r) => (
+                    <div key={r.id} className="border border-rule bg-field-2 p-3 text-sm space-y-1">
+                      <div className="flex flex-wrap justify-between gap-2 text-xs font-bold">
+                        <span className="text-ink">
+                          {r.sender_name} <span className="text-ink-3">({r.sender_role})</span>
+                        </span>
+                        <span className="font-mono text-ink-3">
+                          {formatTime(r.created_at)}
+                        </span>
+                      </div>
+                      <p className="text-ink-2 whitespace-pre-wrap">{r.message}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <form onSubmit={handleReply} className="p-5 sm:p-6 rule-t space-y-3">
+                <label htmlFor="admin-reply" className="field-label">
+                  Official admin response
+                </label>
                 <textarea
+                  id="admin-reply"
                   rows={3}
                   required
+                  maxLength={4000}
                   placeholder="Official Admin response..."
                   value={reply}
                   onChange={(e) => setReply(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs focus:border-red-400 focus:outline-none"
+                  className="field"
                 />
-                <button
-                  type="submit"
-                  className="px-5 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 transition-colors"
-                >
-                  <Send className="w-3.5 h-3.5" />
-                  <span>Send Response</span>
+                {notice && (
+                  <p
+                    role={notice.ok ? "status" : "alert"}
+                    className={`frame px-3 py-2 text-sm font-semibold flex items-center gap-2 ${notice.ok ? "bg-ok-soft text-ok" : "bg-alert-soft text-alert"}`}
+                  >
+                    {notice.ok && <CheckCircle2 className="w-4 h-4 flex-shrink-0" aria-hidden="true" />}
+                    <span>{notice.text}</span>
+                  </p>
+                )}
+                <button type="submit" disabled={busy === "reply" || !reply.trim()} aria-busy={busy === "reply"} className="btn btn-primary">
+                  <Send className="w-4 h-4" aria-hidden="true" />
+                  <span>{busy === "reply" ? "Sending…" : "Send Response"}</span>
                 </button>
+                <p className="field-hint">Replying moves the ticket to “in progress”.</p>
               </form>
-            </div>
+            </section>
           ) : (
-            <div className="p-12 rounded-3xl bg-slate-900 border border-slate-800 text-center text-xs text-slate-500">
+            <div className="frame bg-paper p-12 text-center text-sm text-ink-2">
               Select a support ticket to respond.
             </div>
           )}
         </div>
-
       </div>
     </div>
   );

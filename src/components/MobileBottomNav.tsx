@@ -3,96 +3,66 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Calendar, Ticket, User, Sparkles } from "lucide-react";
+import { Home, Calendar, Mic, ArrowRight, Ticket } from "lucide-react";
 import { useAuth } from "@/lib/context/AuthContext";
 
 export default function MobileBottomNav() {
   const pathname = usePathname();
   const { role, isAuthenticated } = useAuth();
 
-  // Hide sticky bottom bar on dedicated checkout / form flows so it never covers buttons
-  if (pathname.startsWith("/register") || pathname.startsWith("/login") || pathname.startsWith("/coordinator/checkin")) {
+  // Only on public pages: app areas have their own section rail, and form flows need the space
+  if (
+    pathname.startsWith("/register") ||
+    pathname.startsWith("/login") ||
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/coordinator") ||
+    pathname.startsWith("/admin")
+  ) {
     return null;
   }
 
-  const getDashboardLink = () => {
-    if (role === "admin") return "/admin";
-    if (role === "coordinator") return "/coordinator";
-    return "/dashboard";
-  };
+  const dashboardHref = role === "admin" ? "/admin" : role === "coordinator" ? "/coordinator" : "/dashboard";
 
-  const navItems = [
-    {
-      name: "Home",
-      href: "/",
-      icon: Home,
-      isActive: pathname === "/",
-    },
-    {
-      name: "Schedule",
-      href: "/#schedule",
-      icon: Calendar,
-      isActive: pathname === "/#schedule",
-    },
-    {
-      name: "Register",
-      href: "/register",
-      icon: Sparkles,
-      highlight: true,
-      isActive: pathname === "/register",
-    },
-    {
-      name: "My Pass",
-      href: getDashboardLink(),
-      icon: Ticket,
-      isActive: pathname.startsWith("/dashboard") || pathname.startsWith("/coordinator") || pathname.startsWith("/admin"),
-    },
-    {
-      name: "Account",
-      href: isAuthenticated ? getDashboardLink() : "/login",
-      icon: User,
-      isActive: pathname === "/login",
-    },
+  const links = [
+    { name: "Home", href: "/", icon: Home, active: pathname === "/" },
+    { name: "Schedule", href: "/#schedule", icon: Calendar, active: false },
+    { name: "Speakers", href: "/#speakers", icon: Mic, active: false },
   ];
 
+  const primary = isAuthenticated
+    ? { name: role === "user" ? "My pass" : "Dashboard", href: dashboardHref, icon: Ticket }
+    : { name: "Register", href: "/register", icon: ArrowRight };
+  const PrimaryIcon = primary.icon;
+
   return (
-    <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-950/95 backdrop-blur-2xl border-t border-slate-800/90 px-3 py-2 shadow-[0_-10px_25px_rgba(0,0,0,0.6)]">
-      <nav className="flex items-center justify-around max-w-md mx-auto">
-        {navItems.map((item) => {
+    <div className="lg:hidden fixed inset-x-0 bottom-0 z-30 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pointer-events-none">
+      <nav
+        aria-label="Quick navigation"
+        className="pointer-events-auto mx-auto max-w-md flex items-center gap-1 p-1.5 rounded-full bg-paper border border-line shadow-[0_2px_4px_rgba(17,17,19,0.05),0_18px_40px_-18px_rgba(17,17,19,0.35)]"
+      >
+        {links.map((item) => {
           const Icon = item.icon;
-
-          if (item.highlight) {
-            return (
-              <Link
-                key={item.name}
-                href={item.href}
-                className="flex items-center gap-1.5 py-1.5 px-3 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-950 font-bold shadow-md shadow-cyan-500/25 active:scale-95 transition-transform"
-              >
-                <Icon className="w-3.5 h-3.5 stroke-[2.5]" />
-                <span className="text-[11px] font-black uppercase tracking-tight">
-                  Register
-                </span>
-              </Link>
-            );
-          }
-
           return (
             <Link
               key={item.name}
               href={item.href}
-              className={`flex flex-col items-center py-1 px-2.5 rounded-lg transition-colors ${
-                item.isActive
-                  ? "text-cyan-400 font-bold"
-                  : "text-slate-400 hover:text-slate-200"
+              aria-current={item.active ? "page" : undefined}
+              className={`flex-1 min-h-11 flex flex-col items-center justify-center rounded-full text-[0.6875rem] transition-colors ${
+                item.active ? "text-ink font-semibold bg-paper-2" : "text-ink-3 hover:text-ink"
               }`}
             >
-              <Icon className={`w-4 h-4 ${item.isActive ? "text-cyan-400" : "text-slate-400"}`} />
-              <span className="text-[10px] mt-0.5 tracking-tight">
-                {item.name}
-              </span>
+              <Icon className="w-[18px] h-[18px]" aria-hidden="true" />
+              {item.name}
             </Link>
           );
         })}
+        <Link
+          href={primary.href}
+          className="flex-[1.4] min-h-11 inline-flex items-center justify-center gap-1.5 rounded-full bg-ink text-white text-sm font-medium active:scale-[0.98] transition-transform"
+        >
+          {primary.name}
+          <PrimaryIcon className="w-4 h-4" aria-hidden="true" />
+        </Link>
       </nav>
     </div>
   );

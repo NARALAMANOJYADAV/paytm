@@ -1,8 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   Calendar,
@@ -13,14 +13,14 @@ import {
   Shield,
   Layers,
   Send,
-  Award,
   Megaphone,
   HelpCircle,
   Settings,
-  LogOut,
-  ShieldAlert
+  Award,
+  RefreshCw,
 } from "lucide-react";
 import { useAuth } from "@/lib/context/AuthContext";
+import { isStoreReady, refreshStore, useStore } from "@/lib/store";
 
 export default function AdminLayout({
   children,
@@ -28,103 +28,183 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const { role, currentUser, logout, quickSwitchRole } = useAuth();
+  const router = useRouter();
+  const { loading, role, currentUser } = useAuth();
+  const store = useStore();
+  const [retrying, setRetrying] = useState(false);
+  const [loadError, setLoadError] = useState("");
+
+  const isAdmin = role === "admin";
+
+  useEffect(() => {
+    if (!loading && !isAdmin) {
+      router.replace(`/login?next=${encodeURIComponent(pathname || "/admin")}`);
+    }
+  }, [loading, isAdmin, pathname, router]);
+
+  const pendingCount = store.registrations.filter((r) => r.payment_status === "pending").length;
 
   const navItems = [
     { name: "Executive Dashboard", href: "/admin", icon: LayoutDashboard },
     { name: "Event Management", href: "/admin/event", icon: Calendar },
     { name: "Participants", href: "/admin/participants", icon: Users },
-    { name: "Payments & Orders", href: "/admin/payments", icon: CreditCard },
+    { name: "Payments to verify", href: "/admin/payments", icon: CreditCard, badge: pendingCount },
     { name: "Gate Attendance", href: "/admin/attendance", icon: UserCheck },
     { name: "Coordinators & Roles", href: "/admin/coordinators", icon: Shield },
     { name: "Teams & Roster", href: "/admin/teams", icon: Layers },
     { name: "Judging & Submissions", href: "/admin/submissions", icon: Send },
+    { name: "Certificates", href: "/admin/certificates", icon: Award },
     { name: "Event Resources", href: "/admin/resources", icon: BookOpen },
     { name: "Announcements", href: "/admin/announcements", icon: Megaphone },
     { name: "Support Desk", href: "/admin/support", icon: HelpCircle },
     { name: "Platform Settings", href: "/admin/settings", icon: Settings },
   ];
 
-  return (
-    <div className="min-h-screen bg-slate-950 flex flex-col md:flex-row border-t border-slate-900">
-      
-      {/* Admin Sidebar */}
-      <aside className="w-full md:w-64 bg-slate-900/90 border-r border-slate-800 p-4 sm:p-5 flex flex-col justify-between flex-shrink-0">
-        <div className="space-y-5">
-          
-          <div className="p-3.5 rounded-2xl bg-slate-950 border border-red-500/30 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-red-500/20 border border-red-400/40 flex items-center justify-center font-bold text-red-300 text-sm">
-              AD
-            </div>
-            <div className="min-w-0 flex-1">
-              <span className="text-[10px] font-bold uppercase text-red-400 block tracking-wider">
-                Lead Administrator
-              </span>
-              <span className="font-bold text-white text-xs truncate block">
-                {currentUser?.name || "Dr. S. K. Rao"}
-              </span>
-              <span className="text-[9px] text-slate-400 block">
-                Full Root Privileges
-              </span>
-            </div>
-          </div>
+  const isActiveHref = (href: string) =>
+    href === "/admin" ? pathname === "/admin" : pathname === href || pathname.startsWith(`${href}/`);
 
-          <nav className="space-y-1">
-            {navItems.map((item) => {
-              const IconComp = item.icon;
-              const isActive = pathname === item.href;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
-                    isActive
-                      ? "bg-red-500/20 text-red-300 border border-red-500/40 shadow-sm"
-                      : "text-slate-400 hover:text-white hover:bg-slate-800/60"
-                  }`}
-                >
-                  <IconComp className={`w-4 h-4 ${isActive ? "text-red-400" : "text-slate-500"}`} />
-                  <span>{item.name}</span>
-                </Link>
-              );
-            })}
-          </nav>
+  const retry = async () => {
+    setRetrying(true);
+    setLoadError("");
+    try {
+      await refreshStore();
+    } catch (err) {
+      setLoadError(err instanceof Error ? err.message : "Could not load event data.");
+    } finally {
+      setRetrying(false);
+    }
+  };
+
+  // Guard: skeleton while the session resolves, nothing while redirecting.
+  if (loading || !isAdmin) {
+    return (
+      <div className="flex-1 min-h-screen bg-field p-4 sm:p-6 lg:p-8" role="status" aria-live="polite">
+        <div className="max-w-6xl mx-auto space-y-4" aria-hidden="true">
+          <div className="frame bg-paper p-6 space-y-3">
+            <div className="h-6 w-64 max-w-full bg-field-2 animate-pulse" />
+            <div className="h-4 w-96 max-w-full bg-field-2 animate-pulse" />
+          </div>
+          <div className="planes grid-cols-2 lg:grid-cols-4">
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className="p-5 space-y-3">
+                <div className="h-3 w-20 bg-field-2 animate-pulse" />
+                <div className="h-8 w-16 bg-field-2 animate-pulse" />
+              </div>
+            ))}
+          </div>
+        </div>
+        <span className="sr-only">{loading ? "Loading admin console…" : "Redirecting to sign in…"}</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex-1 min-h-screen bg-field flex flex-col lg:flex-row rule-t">
+
+      {/* Admin navigation plane */}
+      <aside className="w-full lg:w-72 flex-shrink-0 bg-paper rule-b lg:border-b-0 lg:border-r lg:border-line">
+        {/* Full-height panel; only its contents stick while the page scrolls */}
+        <div className="flex flex-col lg:sticky lg:top-[4.5rem] lg:max-h-[calc(100vh-4.5rem)] lg:overflow-y-auto">
+
+        {/* Identity strip */}
+        <div className="px-4 sm:px-6 lg:px-5 py-4 rule-b flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <span className="block text-base font-semibold wide text-ink leading-tight">
+              Admin console
+            </span>
+            <span className="block text-xs text-ink-2 truncate">
+              {currentUser?.name || currentUser?.email || "Administrator"}
+            </span>
+          </div>
+          <span className="tag tag-info flex-shrink-0">Administrator</span>
         </div>
 
-        <div className="pt-4 border-t border-slate-800/80 space-y-2 mt-6">
-          <div className="text-[10px] text-slate-400 flex items-center justify-between">
-            <span>Environment</span>
-            <span className="font-mono text-cyan-400 font-bold">Production-Ready</span>
-          </div>
-          <button
-            onClick={() => logout()}
-            className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-slate-950 hover:bg-slate-800 text-slate-400 hover:text-white text-xs font-medium border border-slate-800 transition-colors"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            <span>Sign Out</span>
-          </button>
+        {/* Mobile / tablet: horizontal rail */}
+        <nav
+          aria-label="Admin modules"
+          className="lg:hidden flex overflow-x-auto bg-paper"
+        >
+          {navItems.map((item) => {
+            const IconComp = item.icon;
+            const isActive = isActiveHref(item.href);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-current={isActive ? "page" : undefined}
+                className="rail-item flex-shrink-0"
+              >
+                <IconComp className="w-4 h-4" aria-hidden="true" />
+                <span>{item.name}</span>
+                {!!item.badge && (
+                  <span className="tag tag-pending num" aria-label={`${item.badge} pending`}>{item.badge}</span>
+                )}
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* Desktop: module list */}
+        <nav aria-label="Admin modules" className="hidden lg:block flex-1 py-2">
+          <ul>
+            {navItems.map((item) => {
+              const IconComp = item.icon;
+              const isActive = isActiveHref(item.href);
+              return (
+                <li key={item.href}>
+                  <Link
+                    href={item.href}
+                    aria-current={isActive ? "page" : undefined}
+                    className={`relative flex items-center gap-3 min-h-11 pl-5 pr-4 text-sm transition-colors ${
+                      isActive
+                        ? "font-semibold text-ink bg-paper-2"
+                        : "font-semibold text-ink-2 hover:text-ink hover:bg-paper-2"
+                    }`}
+                  >
+                    {isActive && (
+                      <span aria-hidden="true" className="absolute left-0 top-0 bottom-0 w-1 bg-sky" />
+                    )}
+                    <IconComp className={`w-[18px] h-[18px] flex-shrink-0 ${isActive ? "text-ink" : "text-ink-2"}`} aria-hidden="true" />
+                    <span className="flex-1">{item.name}</span>
+                    {!!item.badge && (
+                      <span className="tag tag-pending num" aria-label={`${item.badge} pending`}>{item.badge}</span>
+                    )}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+
         </div>
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
-        {role !== "admin" && (
-          <div className="mb-6 p-3 rounded-xl bg-red-500/20 border border-red-500/40 text-red-300 text-xs flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <ShieldAlert className="w-4 h-4 text-red-400 flex-shrink-0" />
-              <span>You are viewing the Administrator Console in demo mode.</span>
-            </div>
+      <div className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8">
+        {!isStoreReady() && (
+          <div
+            role="alert"
+            className="mb-6 frame bg-alert-soft p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-sm text-ink"
+          >
+            <span>
+              Event data could not be loaded from the server. {loadError && <span className="text-alert">{loadError}</span>}
+            </span>
             <button
-              onClick={() => quickSwitchRole("admin")}
-              className="px-2.5 py-1 rounded bg-red-400 text-slate-950 font-bold text-[10px] hover:bg-red-300"
+              type="button"
+              onClick={retry}
+              disabled={retrying}
+              aria-busy={retrying}
+              className="btn btn-ink btn-sm min-h-11 self-start sm:self-auto"
             >
-              Switch to Admin Role
+              <RefreshCw className="w-4 h-4" aria-hidden="true" />
+              <span>{retrying ? "Retrying…" : "Retry"}</span>
             </button>
           </div>
         )}
 
         {children}
-      </main>
+
+      </div>
 
     </div>
   );

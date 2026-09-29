@@ -1,119 +1,141 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { Megaphone, Plus, CheckCircle2, ToggleLeft, ToggleRight, AlertCircle } from "lucide-react";
-import { loadStore, saveStore } from "@/lib/store";
+import React, { useState } from "react";
+import { Plus, ToggleLeft, ToggleRight, AlertCircle, Pencil, Trash2, CheckCircle2 } from "lucide-react";
+import { useStore, saveAnnouncement, setAnnouncementPublished, deleteAnnouncement } from "@/lib/store";
 import { Announcement } from "@/lib/types";
 
+type Draft = {
+  id?: string;
+  title: string;
+  content: string;
+  priority: Announcement["priority"];
+  category: Announcement["category"];
+  published: boolean;
+};
+
+const emptyDraft = (): Draft => ({ title: "", content: "", priority: "normal", category: "general", published: true });
+
+const formatDate = (iso: string) => {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime())
+    ? ""
+    : d.toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
+};
+
 export default function AdminAnnouncementsPage() {
-  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-  const [showAdd, setShowAdd] = useState(false);
+  const { announcements } = useStore();
+  const [draft, setDraft] = useState<Draft | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(null);
 
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
-  const [priority, setPriority] = useState<Announcement["priority"]>("normal");
-  const [category, setCategory] = useState<Announcement["category"]>("general");
-
-  const refreshList = () => {
-    const store = loadStore();
-    setAnnouncements(store.announcements);
-  };
-
-  useEffect(() => {
-    refreshList();
-  }, []);
-
-  const handleToggle = (id: string) => {
-    const store = loadStore();
-    const ann = store.announcements.find((a) => a.id === id);
-    if (ann) {
-      ann.published = !ann.published;
-      saveStore(store);
-      refreshList();
+  const run = async (key: string, fn: () => Promise<unknown>, success: string) => {
+    setBusy(key);
+    setNotice(null);
+    try {
+      await fn();
+      setNotice({ ok: true, text: success });
+      return true;
+    } catch (err) {
+      setNotice({ ok: false, text: err instanceof Error ? err.message : "Request failed." });
+      return false;
+    } finally {
+      setBusy(null);
     }
   };
 
-  const handleAdd = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !content.trim()) return;
+    if (!draft) return;
+    const ok = await run(
+      "save",
+      () =>
+        saveAnnouncement({
+          ...(draft.id ? { id: draft.id } : {}),
+          title: draft.title.trim(),
+          content: draft.content.trim(),
+          priority: draft.priority,
+          category: draft.category,
+          published: draft.published,
+        }),
+      draft.id ? "Announcement updated." : draft.published ? "Announcement broadcast." : "Announcement saved as draft.",
+    );
+    if (ok) setDraft(null);
+  };
 
-    const store = loadStore();
-    const newAnn: Announcement = {
-      id: `ann-${Date.now()}`,
-      title: title.trim(),
-      content: content.trim(),
-      priority,
-      category,
-      published: true,
-      created_at: new Date().toISOString(),
-    };
-
-    store.announcements.unshift(newAnn);
-    saveStore(store);
-    setTitle("");
-    setContent("");
-    setShowAdd(false);
-    refreshList();
+  const handleDelete = (item: Announcement) => {
+    if (!confirm(`Delete "${item.title}"?`)) return;
+    run(`del:${item.id}`, () => deleteAnnouncement(item.id), "Announcement deleted.");
   };
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-black text-white flex items-center gap-2">
-            <Megaphone className="w-6 h-6 text-red-400" />
-            <span>Event Announcements & Live Ticker</span>
-          </h1>
-          <p className="text-xs text-slate-400">
-            Publish real-time broadcasts displayed across the website header and user dashboards.
+      <header className="frame bg-paper p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="min-w-0">
+          <h1 className="page-title text-ink">Event Announcements &amp; Live Ticker</h1>
+          <p className="mt-2 text-sm text-ink-2">
+            Publish broadcasts displayed across the website header and user dashboards.
           </p>
         </div>
-
         <button
-          onClick={() => setShowAdd(!showAdd)}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs shadow-md shadow-red-500/20 transition-all self-start sm:self-auto"
+          onClick={() => setDraft(draft && !draft.id ? null : emptyDraft())}
+          aria-expanded={!!draft && !draft.id}
+          className="btn btn-primary self-start sm:self-auto"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-4 h-4" aria-hidden="true" />
           <span>New Announcement</span>
         </button>
-      </div>
+      </header>
 
-      {showAdd && (
-        <form
-          onSubmit={handleAdd}
-          className="rounded-3xl bg-slate-900 border border-slate-700 p-6 space-y-4 shadow-2xl animate-in fade-in duration-150"
+      {notice && (
+        <div
+          role={notice.ok ? "status" : "alert"}
+          className={`frame p-4 text-sm flex items-center gap-2 ${notice.ok ? "bg-ok-soft text-ink" : "bg-alert-soft text-alert font-semibold"}`}
         >
-          <h3 className="font-bold text-white text-sm">Draft Live Broadcast</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {notice.ok && <CheckCircle2 className="w-4 h-4 text-ok flex-shrink-0" aria-hidden="true" />}
+          <span>{notice.text}</span>
+        </div>
+      )}
+
+      {draft && (
+        <form onSubmit={handleSave} className="frame bg-paper">
+          <h2 className="text-xl font-semibold wide text-ink px-5 sm:px-6 py-4 rule-b">
+            {draft.id ? "Edit Announcement" : "Draft Live Broadcast"}
+          </h2>
+          <div className="p-5 sm:p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-[11px] font-semibold text-slate-400 mb-1">Headline *</label>
+              <label htmlFor="ann-title" className="field-label">Headline *</label>
               <input
+                id="ann-title"
                 type="text"
                 required
+                maxLength={150}
                 placeholder="e.g. Build Challenge Kickoff at 1:30 PM"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs focus:border-red-400 focus:outline-none"
+                value={draft.title}
+                onChange={(e) => setDraft({ ...draft, title: e.target.value })}
+                className="field"
               />
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-[11px] font-semibold text-slate-400 mb-1">Priority</label>
+                <label htmlFor="ann-priority" className="field-label">Priority</label>
                 <select
-                  value={priority}
-                  onChange={(e) => setPriority(e.target.value as any)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs focus:outline-none"
+                  id="ann-priority"
+                  value={draft.priority}
+                  onChange={(e) => setDraft({ ...draft, priority: e.target.value as Announcement["priority"] })}
+                  className="field"
                 >
                   <option value="normal">Normal</option>
                   <option value="urgent">Urgent / Alert</option>
                 </select>
               </div>
               <div>
-                <label className="block text-[11px] font-semibold text-slate-400 mb-1">Category</label>
+                <label htmlFor="ann-category" className="field-label">Category</label>
                 <select
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value as any)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs focus:outline-none"
+                  id="ann-category"
+                  value={draft.category}
+                  onChange={(e) => setDraft({ ...draft, category: e.target.value as Announcement["category"] })}
+                  className="field"
                 >
                   <option value="general">General</option>
                   <option value="schedule">Schedule</option>
@@ -124,74 +146,120 @@ export default function AdminAnnouncementsPage() {
               </div>
             </div>
             <div className="sm:col-span-2">
-              <label className="block text-[11px] font-semibold text-slate-400 mb-1">Details Message *</label>
+              <label htmlFor="ann-content" className="field-label">Details Message *</label>
               <textarea
+                id="ann-content"
                 rows={2}
                 required
+                maxLength={2000}
                 placeholder="Message body shown in top ticker..."
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs focus:border-red-400 focus:outline-none"
+                value={draft.content}
+                onChange={(e) => setDraft({ ...draft, content: e.target.value })}
+                className="field"
               />
             </div>
+            <label className="sm:col-span-2 inline-flex items-center gap-3 min-h-11 text-sm font-semibold text-ink cursor-pointer">
+              <input
+                type="checkbox"
+                checked={draft.published}
+                onChange={(e) => setDraft({ ...draft, published: e.target.checked })}
+                className="w-5 h-5 accent-sky"
+              />
+              <span>Published (broadcast now)</span>
+            </label>
           </div>
-          <div className="flex justify-end gap-2 pt-2">
-            <button
-              type="button"
-              onClick={() => setShowAdd(false)}
-              className="px-4 py-2 rounded-xl bg-slate-950 text-slate-400 text-xs font-semibold"
-            >
+          <div className="flex flex-wrap justify-end gap-2 px-5 sm:px-6 py-4 rule-t bg-field">
+            <button type="button" onClick={() => setDraft(null)} className="btn">
               Cancel
             </button>
-            <button
-              type="submit"
-              className="px-5 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold"
-            >
-              Broadcast Now
+            <button type="submit" disabled={busy === "save"} aria-busy={busy === "save"} className="btn btn-primary">
+              {busy === "save" ? "Saving…" : draft.id ? "Save Changes" : draft.published ? "Broadcast Now" : "Save Draft"}
             </button>
           </div>
         </form>
       )}
 
-      <div className="space-y-3">
+      <ul className="planes grid-cols-1">
         {announcements.map((item) => (
-          <div
+          <li
             key={item.id}
-            className="rounded-2xl bg-slate-900 border border-slate-800 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+            className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
           >
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <span
-                  className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${
-                    item.priority === "urgent"
-                      ? "bg-rose-500/20 text-rose-300 border border-rose-500/30"
-                      : "bg-slate-800 text-cyan-300"
-                  }`}
-                >
-                  {item.priority}
+            <div className="space-y-2 min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                {item.priority === "urgent" ? (
+                  <span className="tag tag-alert">
+                    <AlertCircle className="w-3 h-3" aria-hidden="true" />
+                    {item.priority}
+                  </span>
+                ) : (
+                  <span className="tag">{item.priority}</span>
+                )}
+                <span className="tag tag-info">{item.category}</span>
+                <span className={`tag ${item.published ? "tag-ok" : "tag-pending"}`}>
+                  {item.published ? "Published" : "Draft"}
                 </span>
-                <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-slate-800 text-slate-400">
-                  {item.category}
-                </span>
+                <span className="font-mono text-xs text-ink-3">{formatDate(item.created_at)}</span>
               </div>
-              <h3 className="font-bold text-white text-sm">{item.title}</h3>
-              <p className="text-xs text-slate-300">{item.content}</p>
+              <h3 className="font-semibold text-ink text-base">{item.title}</h3>
+              <p className="text-sm text-ink-2">{item.content}</p>
             </div>
 
-            <button
-              onClick={() => handleToggle(item.id)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 self-start sm:self-auto ${
-                item.published
-                  ? "bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30"
-                  : "bg-slate-800 text-slate-400 hover:bg-slate-700"
-              }`}
-            >
-              {item.published ? <ToggleRight className="w-4 h-4 text-emerald-400" /> : <ToggleLeft className="w-4 h-4" />}
-              <span>{item.published ? "Broadcasting" : "Paused"}</span>
-            </button>
-          </div>
+            <div className="flex flex-wrap gap-2 flex-shrink-0 self-start sm:self-auto">
+              <button
+                onClick={() =>
+                  run(
+                    `pub:${item.id}`,
+                    () => setAnnouncementPublished(item.id, !item.published),
+                    item.published ? "Broadcast paused." : "Announcement published.",
+                  )
+                }
+                disabled={busy === `pub:${item.id}`}
+                aria-busy={busy === `pub:${item.id}`}
+                aria-pressed={item.published}
+                className="btn btn-sm min-h-11"
+              >
+                {item.published ? (
+                  <ToggleRight className="w-5 h-5 text-ok" aria-hidden="true" />
+                ) : (
+                  <ToggleLeft className="w-5 h-5 text-ink-3" aria-hidden="true" />
+                )}
+                <span>{item.published ? "Broadcasting" : "Paused"}</span>
+              </button>
+              <button
+                onClick={() =>
+                  setDraft({
+                    id: item.id,
+                    title: item.title,
+                    content: item.content,
+                    priority: item.priority,
+                    category: item.category,
+                    published: item.published,
+                  })
+                }
+                className="btn btn-sm min-h-11"
+                aria-label={`Edit ${item.title}`}
+              >
+                <Pencil className="w-4 h-4" aria-hidden="true" />
+                <span>Edit</span>
+              </button>
+              <button
+                onClick={() => handleDelete(item)}
+                disabled={busy === `del:${item.id}`}
+                aria-busy={busy === `del:${item.id}`}
+                className="btn btn-sm btn-danger min-h-11"
+                aria-label={`Delete ${item.title}`}
+              >
+                <Trash2 className="w-4 h-4" aria-hidden="true" />
+                <span>Delete</span>
+              </button>
+            </div>
+          </li>
         ))}
-      </div>
+        {announcements.length === 0 && (
+          <li className="p-8 text-center text-sm text-ink-2">No announcements yet.</li>
+        )}
+      </ul>
     </div>
   );
 }

@@ -2,307 +2,390 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { Send, CheckCircle2, AlertCircle, GitBranch, Globe, Presentation, FileCode, Award, Sparkles } from "lucide-react";
+import { Send, CheckCircle2, AlertCircle, GitBranch, Globe, Presentation, FileCode, ArrowRight, Clock, Lock } from "lucide-react";
 import { useAuth } from "@/lib/context/AuthContext";
-import { loadStore, saveProjectSubmission } from "@/lib/store";
-import { Team, ProjectSubmission, SubmissionStatus } from "@/lib/types";
+import { useStore, saveProjectSubmission } from "@/lib/store";
+
+function formatRemaining(ms: number): string {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const d = Math.floor(total / 86400);
+  const h = Math.floor((total % 86400) / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  if (d > 0) return `${d}d ${h}h ${m}m`;
+  if (h > 0) return `${h}h ${m}m ${String(s).padStart(2, "0")}s`;
+  return `${m}m ${String(s).padStart(2, "0")}s`;
+}
+
+const fmtIST = (iso: string) =>
+  new Date(iso).toLocaleString("en-IN", {
+    timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "numeric", minute: "2-digit", hour12: true,
+  });
 
 export default function SubmissionPage() {
-  const { currentProfile } = useAuth();
-  const [team, setTeam] = useState<Team | null>(null);
-  const [submission, setSubmission] = useState<ProjectSubmission | null>(null);
+  const { currentProfile, currentRegistration: reg } = useAuth();
+  const store = useStore();
+  const deadlineAt = store.eventConfig.submission_deadline_at;
+
+  const profileId = currentProfile?.id;
+  const team = profileId ? store.teams.find((t) => t.members.some((m) => m.participant_id === profileId)) ?? null : null;
+  const submission = team ? store.submissions.find((s) => s.team_id === team.id) ?? null : null;
+  const confirmed = !!reg && reg.registration_status === "confirmed" && reg.payment_status === "success";
 
   // Form State
   const [projectName, setProjectName] = useState("");
   const [problemStatement, setProblemStatement] = useState("");
   const [description, setDescription] = useState("");
-  const [technologies, setTechnologies] = useState("Next.js, OpenAI API, Tailwind CSS");
+  const [technologies, setTechnologies] = useState("");
   const [githubUrl, setGithubUrl] = useState("");
   const [demoUrl, setDemoUrl] = useState("");
   const [presentationUrl, setPresentationUrl] = useState("");
   const [fileUrl, setFileUrl] = useState("");
-  
-  const [statusMessage, setStatusMessage] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [hydratedFor, setHydratedFor] = useState<string | null>(null);
 
-  const profileId = currentProfile?.id || "profile-1";
+  const [notice, setNotice] = useState<{ text: string; type: "success" | "error" } | null>(null);
+  const [triedFinal, setTriedFinal] = useState(false);
+  const [busy, setBusy] = useState<"draft" | "submitted" | null>(null);
 
+  // Deadline countdown
+  const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
-    const store = loadStore();
-    const myTeam = store.teams.find((t) =>
-      t.members.some((m) => m.participant_id === profileId)
-    );
-    setTeam(myTeam || null);
+    if (!deadlineAt) return;
+    const id = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, [deadlineAt]);
+  const deadlineMs = deadlineAt ? new Date(deadlineAt).getTime() : null;
+  const closed = deadlineMs !== null && now > deadlineMs;
 
-    if (myTeam) {
-      const sub = store.submissions.find((s) => s.team_id === myTeam.id);
-      if (sub) {
-        setSubmission(sub);
-        setProjectName(sub.project_name);
-        setProblemStatement(sub.problem_statement);
-        setDescription(sub.description);
-        setTechnologies(sub.technologies.join(", "));
-        setGithubUrl(sub.github_url || "");
-        setDemoUrl(sub.demo_url || "");
-        setPresentationUrl(sub.presentation_url || "");
-        setFileUrl(sub.file_url || "");
-      }
-    }
-  }, [profileId]);
+  // Load the saved submission into the form once (not on every refresh, so edits are kept)
+  if (submission && hydratedFor !== submission.id) {
+    setProjectName(submission.project_name);
+    setProblemStatement(submission.problem_statement || "");
+    setDescription(submission.description || "");
+    setTechnologies(submission.technologies.join(", "));
+    setGithubUrl(submission.github_url || "");
+    setDemoUrl(submission.demo_url || "");
+    setPresentationUrl(submission.presentation_url || "");
+    setFileUrl(submission.file_url || "");
+    setHydratedFor(submission.id);
+  }
 
-  const handleSubmit = (statusToSave: SubmissionStatus) => {
+  const handleSubmit = async (statusToSave: "draft" | "submitted") => {
     if (!team) return;
-    if (!projectName.trim() || !problemStatement.trim() || !description.trim()) {
-      setStatusMessage("Please fill in Project Name, Problem Statement, and Description.");
+    setNotice(null);
+    if (statusToSave === "submitted") {
+      setTriedFinal(true);
+      if (!projectName.trim() || !problemStatement.trim() || !description.trim()) {
+        setNotice({ text: "Please fill in Project Name, Problem Statement, and Description.", type: "error" });
+        return;
+      }
+      if (!githubUrl.trim() && !demoUrl.trim()) {
+        setNotice({ text: "Add a GitHub or demo link before final submission.", type: "error" });
+        return;
+      }
+    } else if (!projectName.trim()) {
+      setNotice({ text: "Please enter a Project Name to save a draft.", type: "error" });
       return;
     }
 
-    setIsSubmitting(true);
-    const techArray = technologies.split(",").map((t) => t.trim()).filter(Boolean);
-
-    const saved = saveProjectSubmission({
-      teamId: team.id,
-      projectName,
-      problemStatement,
-      description,
-      technologies: techArray,
-      githubUrl: githubUrl || undefined,
-      demoUrl: demoUrl || undefined,
-      presentationUrl: presentationUrl || undefined,
-      fileUrl: fileUrl || undefined,
-      status: statusToSave,
-    });
-
-    setSubmission(saved);
-    setIsSubmitting(false);
-    setStatusMessage(statusToSave === "draft" ? "Draft saved successfully!" : "Project successfully submitted for evaluation!");
+    setBusy(statusToSave);
+    try {
+      await saveProjectSubmission({
+        projectName: projectName.trim(),
+        problemStatement: problemStatement.trim(),
+        description: description.trim(),
+        technologies: technologies.split(",").map((t) => t.trim()).filter(Boolean),
+        githubUrl: githubUrl.trim() || undefined,
+        demoUrl: demoUrl.trim() || undefined,
+        presentationUrl: presentationUrl.trim() || undefined,
+        fileUrl: fileUrl.trim() || undefined,
+        status: statusToSave,
+      });
+      setNotice({
+        text: statusToSave === "draft" ? "Draft saved." : "Project submitted for evaluation.",
+        type: "success",
+      });
+    } catch (err) {
+      setNotice({ text: err instanceof Error ? err.message : "Could not save your submission.", type: "error" });
+    } finally {
+      setBusy(null);
+    }
   };
 
-  if (!team) {
+  if (!confirmed) {
     return (
-      <div className="max-w-2xl mx-auto rounded-3xl bg-slate-900 border border-slate-800 p-8 text-center space-y-4">
-        <AlertCircle className="w-12 h-12 text-amber-400 mx-auto" />
-        <h2 className="text-xl font-bold text-white">No Team Joined Yet</h2>
-        <p className="text-xs text-slate-400">
-          Project submissions are team-based. Please create or join a team first to submit your Build Challenge prototype.
+      <div className="max-w-2xl mx-auto frame bg-paper p-8 text-center space-y-4">
+        <Lock className="w-10 h-10 text-ink-2 mx-auto" aria-hidden="true" />
+        <h1 className="page-title text-ink">Submissions Open After Payment Verification</h1>
+        <p className="text-sm text-ink-2">
+          Only participants with a verified payment can join a team and submit a project.
         </p>
-        <Link
-          href="/dashboard/team"
-          className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-cyan-500 text-slate-950 font-bold text-xs"
-        >
-          <span>Go to Team Setup</span>
+        <Link href="/dashboard" className="btn btn-primary">
+          <span>Check Registration Status</span>
+          <ArrowRight className="w-4 h-4" aria-hidden="true" />
         </Link>
       </div>
     );
   }
 
+  if (!team) {
+    return (
+      <div className="max-w-2xl mx-auto frame bg-paper p-8 text-center space-y-4">
+        <AlertCircle className="w-10 h-10 text-ink-2 mx-auto" aria-hidden="true" />
+        <h1 className="page-title text-ink">No Team Joined Yet</h1>
+        <p className="text-sm text-ink-2">
+          Project submissions are team-based. Please create or join a team first to submit your Build Challenge prototype.
+        </p>
+        <Link href="/dashboard/team" className="btn btn-primary">
+          <span>Go to Team Setup</span>
+          <ArrowRight className="w-4 h-4" aria-hidden="true" />
+        </Link>
+      </div>
+    );
+  }
+
+  const isError = notice?.type === "error";
+  const status = submission?.status || "not_started";
+  const evaluated = status === "evaluated";
+  const alreadySubmitted = status === "submitted" || status === "under_review";
+  const locked = evaluated || closed;
+  const statusTag =
+    status === "submitted" || status === "evaluated"
+      ? "tag-ok"
+      : status === "draft" || status === "under_review"
+        ? "tag-pending"
+        : "";
+  const invalid = (v: string) => (triedFinal && isError && !v.trim() ? true : undefined);
+
+  const urlField = (
+    id: string,
+    label: string,
+    placeholder: string,
+    value: string,
+    setValue: (v: string) => void,
+    Icon: React.ComponentType<{ className?: string }>
+  ) => (
+    <div>
+      <label htmlFor={id} className="field-label">{label}</label>
+      <div className="relative">
+        <input
+          id={id}
+          type="url"
+          placeholder={placeholder}
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          disabled={locked}
+          className="field pl-10 font-mono text-sm"
+        />
+        <Icon className="w-4 h-4 text-ink-3 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" aria-hidden="true" />
+      </div>
+    </div>
+  );
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <header className="frame bg-paper px-5 py-5 sm:px-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-white">Project Submission</h1>
-          <p className="text-xs text-slate-400">
-            Team: <strong className="text-cyan-400">{team.name}</strong> • AI Build Challenge (1:45 PM – 3:15 PM)
+          <h1 className="page-title text-ink">Project Submission</h1>
+          <p className="text-sm text-ink-2 mt-2">
+            Team: <strong className="text-ink">{team.name}</strong> · AI Build Challenge <span className="num">(1:45 PM – 3:15 PM)</span>
           </p>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-400">Status:</span>
-          <span className="px-3 py-1 rounded-full text-xs font-bold uppercase bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-            {submission?.status || "Not Started"}
+          <span className="text-sm text-ink-2">Status:</span>
+          <span className={`tag ${statusTag}`}>
+            {submission?.status ? submission.status.replace("_", " ") : "Not Started"}
           </span>
         </div>
+      </header>
+
+      {/* Deadline */}
+      <div
+        className={`frame px-4 py-3 text-sm flex flex-wrap items-center gap-x-3 gap-y-1 ${
+          closed ? "plane-field" : deadlineAt ? "plane-sun" : "bg-paper"
+        }`}
+      >
+        <Clock className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
+        {!deadlineAt ? (
+          <span>The submission deadline has not been announced yet.</span>
+        ) : closed ? (
+          <span>
+            <strong>Submissions closed</strong> on {fmtIST(deadlineAt)}.
+            {!submission || status === "draft" ? " Unsubmitted drafts were not entered for evaluation." : ""}
+          </span>
+        ) : (
+          <span>
+            Deadline {fmtIST(deadlineAt)} · <strong className="num" aria-live="off">{formatRemaining(deadlineMs! - now)}</strong> left
+          </span>
+        )}
       </div>
 
-      {statusMessage && (
-        <div className="p-3.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
-          <span>{statusMessage}</span>
+      {evaluated && (
+        <div className="plane-field frame px-4 py-3 text-sm flex items-center gap-2">
+          <Lock className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
+          <span>This submission has been evaluated and is locked.</span>
+        </div>
+      )}
+
+      {notice && (
+        <div
+          role={isError ? "alert" : "status"}
+          className={`px-4 py-3 border text-sm text-ink flex items-center gap-2 ${
+            isError ? "border-alert bg-alert-soft" : "border-ok bg-ok-soft"
+          }`}
+        >
+          {isError ? (
+            <AlertCircle className="w-5 h-5 text-alert flex-shrink-0" aria-hidden="true" />
+          ) : (
+            <CheckCircle2 className="w-5 h-5 text-ok flex-shrink-0" aria-hidden="true" />
+          )}
+          <span>{notice.text}</span>
         </div>
       )}
 
       {/* Jury Scores display if evaluated */}
       {submission?.scores && (
-        <div className="rounded-3xl bg-gradient-to-r from-amber-950/40 via-slate-900 to-amber-950/40 border border-amber-500/40 p-6 space-y-4 shadow-xl">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Award className="w-5 h-5 text-amber-400" />
-              <h3 className="font-black text-white text-base">Jury Evaluation & Score Card</h3>
-            </div>
-            <div className="text-right">
-              <span className="text-2xl font-black text-amber-400">{submission.scores.total}</span>
-              <span className="text-xs text-slate-400"> / 100 Points</span>
+        <section aria-labelledby="scorecard" className="planes grid-cols-2 sm:grid-cols-4">
+          <div className="col-span-full px-5 py-4 flex flex-wrap items-end justify-between gap-3">
+            <h2 id="scorecard" className="text-xl font-semibold wide text-ink">Jury Evaluation &amp; Score Card</h2>
+            <div>
+              <span className="display num text-4xl text-ink">{submission.scores.total}</span>
+              <span className="text-sm text-ink-2"> / 100 Points</span>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
-            <div className="bg-slate-950/80 p-2.5 rounded-xl border border-slate-800">
-              <span className="text-[10px] text-slate-400 uppercase font-bold block">Innovation</span>
-              <span className="font-bold text-white text-sm">{submission.scores.innovation} / 25</span>
-            </div>
-            <div className="bg-slate-950/80 p-2.5 rounded-xl border border-slate-800">
-              <span className="text-[10px] text-slate-400 uppercase font-bold block">AI Prompting</span>
-              <span className="font-bold text-white text-sm">{submission.scores.ai_prompting} / 25</span>
-            </div>
-            <div className="bg-slate-950/80 p-2.5 rounded-xl border border-slate-800">
-              <span className="text-[10px] text-slate-400 uppercase font-bold block">Tech Execution</span>
-              <span className="font-bold text-white text-sm">{submission.scores.tech_execution} / 25</span>
-            </div>
-            <div className="bg-slate-950/80 p-2.5 rounded-xl border border-slate-800">
-              <span className="text-[10px] text-slate-400 uppercase font-bold block">Presentation</span>
-              <span className="font-bold text-white text-sm">{submission.scores.presentation} / 25</span>
-            </div>
+          <div className="p-4">
+            <span className="cell-label block">Innovation</span>
+            <span className="font-bold text-ink num">{submission.scores.innovation} / 25</span>
+          </div>
+          <div className="p-4">
+            <span className="cell-label block">AI Prompting</span>
+            <span className="font-bold text-ink num">{submission.scores.ai_prompting} / 25</span>
+          </div>
+          <div className="p-4">
+            <span className="cell-label block">Tech Execution</span>
+            <span className="font-bold text-ink num">{submission.scores.tech_execution} / 25</span>
+          </div>
+          <div className="p-4">
+            <span className="cell-label block">Presentation</span>
+            <span className="font-bold text-ink num">{submission.scores.presentation} / 25</span>
           </div>
 
           {submission.scores.feedback && (
-            <p className="text-xs text-slate-300 italic bg-slate-950/60 p-3 rounded-xl border border-slate-800">
+            <p className="col-span-full px-5 py-4 text-sm text-ink-2">
               “{submission.scores.feedback}”
             </p>
           )}
-        </div>
+        </section>
       )}
 
       {/* Main Form */}
-      <div className="rounded-3xl bg-slate-900 border border-slate-800 p-6 sm:p-8 space-y-6 shadow-xl">
-        <div className="space-y-4">
-          
+      <div className="frame bg-paper">
+        <div className="p-5 sm:p-6 space-y-5">
+
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
-              Project Name *
-            </label>
+            <label htmlFor="project-name" className="field-label">Project Name *</label>
             <input
+              id="project-name"
+              disabled={locked}
               type="text"
               placeholder="e.g. HealthGen AI Triage"
               value={projectName}
               onChange={(e) => setProjectName(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white text-sm focus:border-cyan-400 focus:outline-none font-bold"
+              aria-invalid={invalid(projectName)}
+              className="field font-bold"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
-              Problem Statement *
-            </label>
+            <label htmlFor="problem" className="field-label">Problem Statement *</label>
             <textarea
+              id="problem"
+              disabled={locked}
               rows={2}
               placeholder="What real-world challenge does your application solve?"
               value={problemStatement}
               onChange={(e) => setProblemStatement(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs focus:border-cyan-400 focus:outline-none"
+              aria-invalid={invalid(problemStatement)}
+              className="field"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
-              Project Description & Prompt Architecture *
-            </label>
+            <label htmlFor="description" className="field-label">Project Description &amp; Prompt Architecture *</label>
             <textarea
+              id="description"
+              disabled={locked}
               rows={4}
               placeholder="Describe your technical architecture, models utilized, and prompt engineering strategy..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs focus:border-cyan-400 focus:outline-none"
+              aria-invalid={invalid(description)}
+              className="field"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
-              Technologies Used * (Comma separated)
-            </label>
+            <label htmlFor="tech" className="field-label">Technologies Used (Comma separated)</label>
             <input
+              id="tech"
+              disabled={locked}
               type="text"
               placeholder="e.g. Next.js, OpenAI API, LangChain, Tailwind CSS"
               value={technologies}
               onChange={(e) => setTechnologies(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs focus:border-cyan-400 focus:outline-none"
+              className="field"
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
-                GitHub Repository URL
-              </label>
-              <div className="relative">
-                <input
-                  type="url"
-                  placeholder="https://github.com/..."
-                  value={githubUrl}
-                  onChange={(e) => setGithubUrl(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs font-mono focus:border-cyan-400 focus:outline-none"
-                />
-                <GitBranch className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
-                Live Demo URL (Vercel / Netlify / Render)
-              </label>
-              <div className="relative">
-                <input
-                  type="url"
-                  placeholder="https://..."
-                  value={demoUrl}
-                  onChange={(e) => setDemoUrl(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs font-mono focus:border-cyan-400 focus:outline-none"
-                />
-                <Globe className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
-                Presentation / Slides URL (Google Slides / Canva)
-              </label>
-              <div className="relative">
-                <input
-                  type="url"
-                  placeholder="https://slides..."
-                  value={presentationUrl}
-                  onChange={(e) => setPresentationUrl(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs font-mono focus:border-cyan-400 focus:outline-none"
-                />
-                <Presentation className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
-                Project ZIP / Documentation Link
-              </label>
-              <div className="relative">
-                <input
-                  type="url"
-                  placeholder="Google Drive / Cloud storage link"
-                  value={fileUrl}
-                  onChange={(e) => setFileUrl(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs font-mono focus:border-cyan-400 focus:outline-none"
-                />
-                <FileCode className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
-              </div>
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-1">
+            {urlField("github-url", "GitHub Repository URL", "https://github.com/...", githubUrl, setGithubUrl, GitBranch)}
+            {urlField("demo-url", "Live Demo URL (Vercel / Netlify / Render)", "https://...", demoUrl, setDemoUrl, Globe)}
+            {urlField("slides-url", "Presentation / Slides URL (Google Slides / Canva)", "https://slides...", presentationUrl, setPresentationUrl, Presentation)}
+            {urlField("file-url", "Project ZIP / Documentation Link", "Google Drive / Cloud storage link", fileUrl, setFileUrl, FileCode)}
           </div>
 
         </div>
 
-        <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
-          <button
-            type="button"
-            onClick={() => handleSubmit("draft")}
-            className="px-5 py-3 rounded-xl bg-slate-950 hover:bg-slate-800 text-slate-300 border border-slate-800 font-bold text-xs transition-colors"
-          >
-            Save as Draft
-          </button>
+        <div className="rule-t px-5 py-4 sm:px-6 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2">
+          {locked ? (
+            <p className="text-sm text-ink-2 sm:mr-auto flex items-center gap-2">
+              <Lock className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
+              {evaluated ? "Evaluated submissions cannot be changed." : "The submission deadline has passed."}
+            </p>
+          ) : (
+            <>
+              <p className="text-xs text-ink-3 sm:mr-auto">
+                Final submission needs a GitHub or live demo link.
+                {alreadySubmitted ? " You can update it until the deadline." : ""}
+              </p>
+              {!alreadySubmitted && (
+                <button
+                  type="button"
+                  onClick={() => handleSubmit("draft")}
+                  disabled={busy !== null}
+                  aria-busy={busy === "draft"}
+                  className="btn"
+                >
+                  {busy === "draft" ? "Saving…" : "Save as Draft"}
+                </button>
+              )}
 
-          <button
-            type="button"
-            onClick={() => handleSubmit("submitted")}
-            className="px-8 py-3 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 hover:from-cyan-300 hover:to-blue-400 text-slate-950 font-black text-xs uppercase tracking-wider shadow-lg shadow-cyan-500/25 transition-all flex items-center gap-2"
-          >
-            <Send className="w-4 h-4" />
-            <span>Submit for Evaluation</span>
-          </button>
+              <button
+                type="button"
+                onClick={() => handleSubmit("submitted")}
+                disabled={busy !== null}
+                aria-busy={busy === "submitted"}
+                className="btn btn-primary"
+              >
+                <Send className="w-4 h-4" aria-hidden="true" />
+                <span>
+                  {busy === "submitted" ? "Submitting…" : alreadySubmitted ? "Update Submission" : "Submit for Evaluation"}
+                </span>
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>
