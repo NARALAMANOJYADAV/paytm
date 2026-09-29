@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/context/AuthContext";
 import Navbar from "@/components/Navbar";
@@ -7,14 +7,20 @@ import Footer from "@/components/Footer";
 import BroadcastBanner from "@/components/BroadcastBanner";
 import MobileBottomNav from "@/components/MobileBottomNav";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const geist = Geist({
+  variable: "--font-geist",
   subsets: ["latin"],
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+});
+
+const serif = Instrument_Serif({
+  variable: "--font-instrument-serif",
+  subsets: ["latin"],
+  weight: "400",
 });
 
 export const metadata: Metadata = {
@@ -42,13 +48,13 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} dark h-full antialiased`}
+      className={`${geist.variable} ${geistMono.variable} ${serif.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-slate-950 text-slate-100 selection:bg-cyan-500 selection:text-slate-950 font-sans">
+      <body className="min-h-full flex flex-col bg-field text-ink font-sans">
         <AuthProvider>
           <BroadcastBanner />
           <Navbar />
-          <main className="flex-1 flex flex-col pb-16 lg:pb-0">{children}</main>
+          <main className="flex-1 flex flex-col">{children}</main>
           <Footer />
           <MobileBottomNav />
         </AuthProvider>

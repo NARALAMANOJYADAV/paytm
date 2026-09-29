@@ -1,37 +1,19 @@
 "use client";
 
-import {
-  User,
-  ParticipantProfile,
-  Registration,
-  Payment,
-  Ticket,
-  AttendanceRecord,
-  CoordinatorInfo,
-  EventResource,
-  Team,
-  ProjectSubmission,
-  SupportTicket,
-  Announcement,
-  Certificate,
-  EventConfig,
-  CoordinatorPermission,
+import { useEffect, useState } from "react";
+import type {
+  Announcement, AttendanceRecord, Certificate, CoordinatorInfo, CoordinatorPermission, EventConfig, EventResource,
+  ParticipantProfile, Payment, ProjectSubmission, Registration, SupportTicket, Team, Ticket, User,
 } from "./types";
-import {
-  initialEventConfig,
-  generateSeedParticipants,
-  initialCoordinators,
-  initialResources,
-  initialTeams,
-  initialSubmissions,
-  initialSupportTickets,
-  initialAnnouncements,
-  initialCertificates,
-} from "./data/mockStore";
+import { initialEventConfig } from "./data/eventDefaults";
+import { accessToken } from "./supabaseBrowser";
 
-const STORAGE_KEY = "p2p_platform_store_v1";
-
-interface StoreState {
+/**
+ * Client cache of the server state. The server (/api/state) returns only what the
+ * signed-in user's role may see. Every write goes through /api/action and then the
+ * cache is refreshed. `loadStore()` stays synchronous so components can read it in render.
+ */
+export interface StoreState {
   eventConfig: EventConfig;
   users: User[];
   profiles: ParticipantProfile[];
@@ -46,599 +28,158 @@ interface StoreState {
   supportTickets: SupportTicket[];
   announcements: Announcement[];
   certificates: Certificate[];
+  seatsTaken: number;
 }
 
-function getInitialState(): StoreState {
-  const seed = generateSeedParticipants();
-  return {
-    eventConfig: initialEventConfig,
-    users: seed.users,
-    profiles: seed.profiles,
-    registrations: seed.registrations,
-    payments: seed.payments,
-    tickets: seed.tickets,
-    attendance: seed.attendance,
-    coordinators: initialCoordinators,
-    resources: initialResources,
-    teams: initialTeams,
-    submissions: initialSubmissions,
-    supportTickets: initialSupportTickets,
-    announcements: initialAnnouncements,
-    certificates: initialCertificates,
-  };
-}
+const empty = (): StoreState => ({
+  eventConfig: initialEventConfig, users: [], profiles: [], registrations: [], payments: [], tickets: [], attendance: [],
+  coordinators: [], resources: [], teams: [], submissions: [], supportTickets: [], announcements: [], certificates: [], seatsTaken: 0,
+});
+
+let cache: StoreState = empty();
+let ready = false;
+let inflight: Promise<StoreState> | null = null;
 
 export function loadStore(): StoreState {
-  if (typeof window === "undefined") {
-    return getInitialState();
-  }
+  return cache;
+}
+export function isStoreReady(): boolean {
+  return ready;
+}
+/** Install a state payload fetched elsewhere (AuthProvider) without a second request. */
+export function applyState(state: StoreState) {
+  cache = state;
+  ready = true;
+  if (typeof window !== "undefined") window.dispatchEvent(new Event("store_updated"));
+}
+export function clearStore() {
+  cache = empty();
+  ready = false;
+  if (typeof window !== "undefined") window.dispatchEvent(new Event("store_updated"));
+}
 
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      const init = getInitialState();
-      saveStore(init);
-      return init;
+async function authHeaders(): Promise<Record<string, string>> {
+  const t = await accessToken();
+  return t ? { Authorization: `Bearer ${t}` } : {};
+}
+
+export async function refreshStore(): Promise<StoreState> {
+  if (inflight) return inflight;
+  inflight = (async () => {
+    try {
+      const res = await fetch("/api/state", { headers: await authHeaders(), cache: "no-store" });
+      const json = await res.json();
+      if (!json.ok) throw new Error(json.error);
+      cache = json.data.state;
+      ready = true;
+      window.dispatchEvent(new Event("store_updated"));
+      return cache;
+    } finally {
+      inflight = null;
     }
-    return JSON.parse(raw);
-  } catch (e) {
-    console.error("Failed to load store, fallback to initial", e);
-    return getInitialState();
-  }
+  })();
+  return inflight;
 }
 
-export function saveStore(state: StoreState): void {
-  if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    window.dispatchEvent(new Event("store_updated"));
-  } catch (e) {
-    console.error("Failed to save store", e);
-  }
+/** React hook: re-renders whenever the store refreshes. */
+export function useStore(): StoreState {
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const on = () => setTick((n) => n + 1);
+    window.addEventListener("store_updated", on);
+    return () => window.removeEventListener("store_updated", on);
+  }, []);
+  return cache;
 }
 
-export function resetStore(): StoreState {
-  const init = getInitialState();
-  saveStore(init);
-  return init;
+async function call<T = unknown>(action: string, payload: Record<string, unknown> = {}, refresh = true): Promise<T> {
+  const res = await fetch("/api/action", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+    body: JSON.stringify({ action, payload }),
+  });
+  const json = await res.json().catch(() => ({ ok: false, error: "Network error" }));
+  if (!json.ok) throw new Error(json.error || "Request failed");
+  if (refresh) await refreshStore();
+  return json.data as T;
 }
 
-// ---------------- Helper Actions ---------------- //
-
-export function getStoreData() {
-  return loadStore();
+async function postForm<T = unknown>(path: string, form: FormData): Promise<T> {
+  const res = await fetch(path, { method: "POST", body: form, headers: await authHeaders() });
+  const json = await res.json().catch(() => ({ ok: false, error: "Network error" }));
+  if (!json.ok) throw new Error(json.error || "Request failed");
+  return json.data as T;
 }
 
-/**
- * Register a new participant and return their registration details
- */
-export function registerParticipant(data: {
-  name: string;
-  email: string;
-  mobile: string;
-  rollNumber: string;
-  year: ParticipantProfile["year"];
-  branch: ParticipantProfile["branch"];
-  section: ParticipantProfile["section"];
-  isteMember: boolean;
-  isteSmNumber?: string;
-  hasLaptop: boolean;
-  linkedinPortfolio?: string;
-  fee: number;
-  password?: string;
-}): { registration: Registration; profile: ParticipantProfile; user: User } {
-  const store = loadStore();
+// ------------------------------------------------------------------ registration & payment
+/** Public. Fields: name,email,password,mobile,rollNumber,year,branch,section,isteMember,isteSmNumber,hasLaptop,linkedinPortfolio,utr + file "proof". */
+export const registerParticipant = (form: FormData) =>
+  postForm<{ registrationNumber: string; fee: number }>("/api/register", form);
+/** Participant: new UTR + "proof" file after a rejected payment. */
+export const resubmitPayment = async (form: FormData) => {
+  await postForm("/api/payment/resubmit", form);
+  await refreshStore();
+};
+export const reviewPayment = (registrationId: string, decision: "approve" | "reject", reason?: string) =>
+  call<{ status: string; ticketNumber?: string }>("reviewPayment", { registrationId, decision, reason });
+export const paymentProofUrl = (registrationId: string) =>
+  call<{ url: string }>("paymentProofUrl", { registrationId }, false);
 
-  const idSuffix = Math.random().toString(36).substring(2, 7).toUpperCase();
-  const regNum = `P2P-2026-${idSuffix}`;
-  const userId = `user-${Date.now()}`;
-  const profileId = `profile-${Date.now()}`;
-  const regId = `reg-${Date.now()}`;
-
-  const newUser: User = {
-    id: userId,
-    auth_id: `auth-${Date.now()}`,
-    name: data.name,
-    email: data.email,
-    phone: data.mobile,
-    role: "user",
-    status: "active",
-    password: data.password || "password123",
-    created_at: new Date().toISOString(),
-  };
-
-  const newProfile: ParticipantProfile = {
-    id: profileId,
-    user_id: userId,
-    certificate_name: data.name,
-    mobile: data.mobile,
-    roll_number: data.rollNumber,
-    year: data.year,
-    branch: data.branch,
-    section: data.section,
-    iste_member: data.isteMember,
-    iste_sm_number: data.isteSmNumber,
-    has_laptop: data.hasLaptop,
-    linkedin_portfolio: data.linkedinPortfolio,
-    created_at: new Date().toISOString(),
-  };
-
-  const newRegistration: Registration = {
-    id: regId,
-    registration_number: regNum,
-    participant_id: profileId,
-    event_id: "p2p-2026",
-    registration_type: data.isteMember ? "iste" : "non-iste",
-    fee: data.fee,
-    payment_status: "pending",
-    registration_status: "reserved",
-    created_at: new Date().toISOString(),
-  };
-
-  store.users.unshift(newUser);
-  store.profiles.unshift(newProfile);
-  store.registrations.unshift(newRegistration);
-
-  saveStore(store);
-
-  return { registration: newRegistration, profile: newProfile, user: newUser };
-}
-
-/**
- * Updates a registered user's account password
- */
-export function updateUserPassword(emailOrUserId: string, password: string): boolean {
-  const store = loadStore();
-  const clean = emailOrUserId.trim().toLowerCase();
-  const user = store.users.find(
-    (u) => u.email.toLowerCase() === clean || u.id === emailOrUserId
-  );
-  if (user) {
-    user.password = password;
-    saveStore(store);
-    return true;
-  }
-  return false;
-}
-
-/**
- * Resets user password by finding user via Email, Phone number, or Roll Number
- */
-export function resetPasswordByIdentifier(
-  identifier: string,
-  newPassword: string
-): { success: boolean; user?: User; error?: string } {
-  const store = loadStore();
-  const clean = identifier.trim().toLowerCase();
-  const cleanDigits = identifier.replace(/\D/g, "");
-
-  let user = store.users.find(
-    (u) => u.email.toLowerCase() === clean || u.id === identifier
-  );
-
-  if (!user && cleanDigits.length >= 10) {
-    user = store.users.find(
-      (u) => u.phone && u.phone.replace(/\D/g, "").includes(cleanDigits.slice(-10))
-    );
-  }
-
-  if (!user) {
-    const prof = store.profiles.find((p) => p.roll_number.toLowerCase() === clean);
-    if (prof) {
-      user = store.users.find((u) => u.id === prof.user_id);
-    }
-  }
-
-  if (!user) {
-    return {
-      success: false,
-      error: "No registered participant found with this Email, Phone, or Roll Number.",
-    };
-  }
-
-  user.password = newPassword;
-  saveStore(store);
-  return { success: true, user };
-}
-
-/**
- * Complete Payment and issue ticket
- */
-export function completePaymentAndIssueTicket(
-  registrationId: string,
-  paymentDetails: {
-    razorpayOrderId: string;
-    razorpayPaymentId: string;
-    razorpaySignature: string;
-    amount: number;
-    paymentMethod: string;
-    utrNumber?: string;
-  }
-): { payment: Payment; ticket: Ticket } {
-  const store = loadStore();
-
-  const regIndex = store.registrations.findIndex((r) => r.id === registrationId);
-  if (regIndex === -1) {
-    throw new Error("Registration not found");
-  }
-
-  const reg = store.registrations[regIndex];
-  reg.payment_status = "success";
-  reg.registration_status = "confirmed";
-  if (paymentDetails.utrNumber) {
-    reg.utr_number = paymentDetails.utrNumber.trim();
-  }
-
-  const newPayment: Payment = {
-    id: `pay-${Date.now()}`,
-    registration_id: reg.id,
-    razorpay_order_id: paymentDetails.razorpayOrderId,
-    razorpay_payment_id: paymentDetails.razorpayPaymentId,
-    razorpay_signature: paymentDetails.razorpaySignature,
-    amount: paymentDetails.amount,
-    status: "success",
-    payment_method: paymentDetails.paymentMethod,
-    utr_number: paymentDetails.utrNumber?.trim(),
-    created_at: new Date().toISOString(),
-  };
-
-  const newTicket: Ticket = {
-    id: `ticket-${Date.now()}`,
-    registration_id: reg.id,
-    ticket_number: reg.registration_number,
-    qr_token: `ticket_id=${reg.registration_number}`,
-    wallet_pass_url: `/api/wallet/${reg.registration_number}`,
-    status: "active",
-    created_at: new Date().toISOString(),
-  };
-
-  store.payments.unshift(newPayment);
-  store.tickets.unshift(newTicket);
-
-  saveStore(store);
-
-  return { payment: newPayment, ticket: newTicket };
-}
-
-/**
- * Check-in verification logic matching Section 36 & 37:
- * - Successful check-in: return details + check in time
- * - Already checked in: return first check-in time
- * - Invalid ticket: error
- */
-export function processCheckIn(
-  query: string,
-  coordinatorName: string
-): {
-  success: boolean;
+// ------------------------------------------------------------------ gate
+export interface CheckInResult {
   status: "verified" | "already_checked_in" | "invalid";
   message: string;
+  success?: boolean;
   participant?: {
-    name: string;
-    registrationNumber: string;
-    rollNumber: string;
-    branch: string;
-    year: string;
-    section: string;
-    isteMember: boolean;
-    checkInTime: string;
-    firstCheckInTime?: string;
-  };
-} {
-  const store = loadStore();
-  const cleanQuery = query.replace(/^ticket_id=/, "").trim().toUpperCase();
-
-  // Find ticket or registration
-  const ticket = store.tickets.find(
-    (t) => t.ticket_number.toUpperCase() === cleanQuery || t.qr_token.toUpperCase().includes(cleanQuery)
-  );
-
-  const registration = store.registrations.find(
-    (r) =>
-      r.registration_number.toUpperCase() === cleanQuery ||
-      (ticket && r.id === ticket.registration_id)
-  );
-
-  if (!registration) {
-    return {
-      success: false,
-      status: "invalid",
-      message: "✕ INVALID TICKET. Ticket record not found. Please contact the event coordinator desk.",
-    };
-  }
-
-  const profile = store.profiles.find((p) => p.id === registration.participant_id);
-  const user = store.users.find((u) => u.id === profile?.user_id);
-  const participantName = profile?.certificate_name || user?.name || "Participant";
-
-  // Check if already checked in
-  const existingAtt = store.attendance.find(
-    (a) => a.registration_number.toUpperCase() === registration.registration_number.toUpperCase()
-  );
-
-  if (existingAtt) {
-    return {
-      success: false,
-      status: "already_checked_in",
-      message: `⚠ ALREADY CHECKED IN. First check-in recorded at ${existingAtt.check_in_time} by ${existingAtt.checked_in_by}.`,
-      participant: {
-        name: participantName,
-        registrationNumber: registration.registration_number,
-        rollNumber: profile?.roll_number || "N/A",
-        branch: profile?.branch || "N/A",
-        year: profile?.year || "N/A",
-        section: profile?.section || "N/A",
-        isteMember: profile?.iste_member || false,
-        checkInTime: existingAtt.check_in_time,
-        firstCheckInTime: existingAtt.check_in_time,
-      },
-    };
-  }
-
-  // Record successful check-in
-  const now = new Date();
-  const timeStr = now.toLocaleTimeString([], { hour: "numeric", minute: "2-digit", hour12: true });
-
-  const newAttendance: AttendanceRecord = {
-    id: `att-${Date.now()}`,
-    ticket_id: ticket?.id || `ticket-${Date.now()}`,
-    registration_number: registration.registration_number,
-    participant_name: participantName,
-    roll_number: profile?.roll_number || "N/A",
-    branch: profile?.branch || "N/A",
-    year: profile?.year || "N/A",
-    section: profile?.section || "N/A",
-    iste_member: profile?.iste_member || false,
-    checked_in_by: coordinatorName,
-    check_in_time: timeStr,
-    status: "checked_in",
-  };
-
-  store.attendance.unshift(newAttendance);
-  saveStore(store);
-
-  return {
-    success: true,
-    status: "verified",
-    message: "✓ CHECK-IN VERIFIED. Attendance successfully recorded.",
-    participant: {
-      name: participantName,
-      registrationNumber: registration.registration_number,
-      rollNumber: profile?.roll_number || "N/A",
-      branch: profile?.branch || "N/A",
-      year: profile?.year || "N/A",
-      section: profile?.section || "N/A",
-      isteMember: profile?.iste_member || false,
-      checkInTime: timeStr,
-    },
+    name: string; registrationNumber: string; rollNumber: string; branch: string; year: string; section: string;
+    isteMember: boolean; checkInTime: string; firstCheckInTime?: string;
   };
 }
+export const processCheckIn = async (query: string): Promise<CheckInResult> => {
+  const r = await call<CheckInResult>("checkIn", { query });
+  return { ...r, success: r.status === "verified" };
+};
 
-/**
- * Coordinator permission management
- */
-export function toggleCoordinatorPermission(
-  coordinatorId: string,
-  permission: CoordinatorPermission
-) {
-  const store = loadStore();
-  const coord = store.coordinators.find((c) => c.id === coordinatorId);
-  if (!coord) return;
+// ------------------------------------------------------------------ participant
+export const updateProfile = (p: { name: string; certificateName?: string; mobile: string; linkedinPortfolio?: string; hasLaptop: boolean }) =>
+  call("updateProfile", p);
+export const createTeam = (name: string) => call<{ teamId: string; inviteCode: string }>("createTeam", { name });
+export const joinTeam = (inviteCode: string) => call<{ teamId: string }>("joinTeam", { inviteCode });
+export const leaveTeam = () => call("leaveTeam");
+export const saveProjectSubmission = (data: {
+  projectName: string; problemStatement: string; description: string; technologies: string[];
+  githubUrl?: string; demoUrl?: string; presentationUrl?: string; fileUrl?: string; status: "draft" | "submitted";
+}) => call("saveSubmission", data);
+export const createSupportTicket = (t: { category: string; subject: string; message: string; attachmentUrl?: string }) =>
+  call<{ ticketCode: string }>("createSupportTicket", t);
+export const replySupportTicket = (ticketId: string, message: string) => call("replySupportTicket", { ticketId, message });
+export const setSupportStatus = (ticketId: string, status: SupportTicket["status"]) => call("setSupportStatus", { ticketId, status });
 
-  if (coord.permissions.includes(permission)) {
-    coord.permissions = coord.permissions.filter((p) => p !== permission);
-  } else {
-    coord.permissions.push(permission);
-  }
-  saveStore(store);
-}
-
-/**
- * Team Management: Create Team
- */
-export function createTeam(teamName: string, leaderProfileId: string): Team {
-  const store = loadStore();
-  const profile = store.profiles.find((p) => p.id === leaderProfileId);
-  const codeSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
-  const inviteCode = `P2P-${codeSuffix}`;
-
-  const newTeam: Team = {
-    id: `team-${Date.now()}`,
-    event_id: "p2p-2026",
-    name: teamName,
-    invite_code: inviteCode,
-    leader_id: leaderProfileId,
-    leader_name: profile?.certificate_name || "Team Leader",
-    created_at: new Date().toISOString(),
-    members: [
-      {
-        id: `tm-${Date.now()}`,
-        team_id: `team-${Date.now()}`,
-        participant_id: leaderProfileId,
-        name: profile?.certificate_name || "Leader",
-        roll_number: profile?.roll_number || "N/A",
-        branch: profile?.branch || "N/A",
-        is_leader: true,
-        joined_at: new Date().toISOString(),
-      },
-    ],
-  };
-
-  store.teams.unshift(newTeam);
-  saveStore(store);
-  return newTeam;
-}
-
-/**
- * Join Team with Invite Code
- */
-export function joinTeam(inviteCode: string, participantProfileId: string): Team {
-  const store = loadStore();
-  const team = store.teams.find((t) => t.invite_code.toUpperCase() === inviteCode.trim().toUpperCase());
-  if (!team) {
-    throw new Error("Invalid team code");
-  }
-
-  if (team.members.length >= store.eventConfig.max_team_size) {
-    throw new Error(`Team is full (Max ${store.eventConfig.max_team_size} members)`);
-  }
-
-  const profile = store.profiles.find((p) => p.id === participantProfileId);
-  const alreadyIn = team.members.some((m) => m.participant_id === participantProfileId);
-  if (alreadyIn) {
-    throw new Error("You are already a member of this team");
-  }
-
-  team.members.push({
-    id: `tm-${Date.now()}`,
-    team_id: team.id,
-    participant_id: participantProfileId,
-    name: profile?.certificate_name || "Member",
-    roll_number: profile?.roll_number || "N/A",
-    branch: profile?.branch || "N/A",
-    is_leader: false,
-    joined_at: new Date().toISOString(),
-  });
-
-  saveStore(store);
-  return team;
-}
-
-/**
- * Submit or update project submission
- */
-export function saveProjectSubmission(data: {
-  teamId: string;
-  projectName: string;
-  problemStatement: string;
-  description: string;
-  technologies: string[];
-  githubUrl?: string;
-  demoUrl?: string;
-  presentationUrl?: string;
-  fileUrl?: string;
-  status: ProjectSubmission["status"];
-}): ProjectSubmission {
-  const store = loadStore();
-  const team = store.teams.find((t) => t.id === data.teamId);
-  const existingIndex = store.submissions.findIndex((s) => s.team_id === data.teamId);
-
-  const submission: ProjectSubmission = {
-    id: existingIndex >= 0 ? store.submissions[existingIndex].id : `sub-${Date.now()}`,
-    team_id: data.teamId,
-    team_name: team?.name || "Team Project",
-    project_name: data.projectName,
-    problem_statement: data.problemStatement,
-    description: data.description,
-    technologies: data.technologies,
-    github_url: data.githubUrl,
-    demo_url: data.demoUrl,
-    presentation_url: data.presentationUrl,
-    file_url: data.fileUrl,
-    status: data.status,
-    scores: existingIndex >= 0 ? store.submissions[existingIndex].scores : undefined,
-    submitted_at: new Date().toISOString(),
-  };
-
-  if (existingIndex >= 0) {
-    store.submissions[existingIndex] = submission;
-  } else {
-    store.submissions.unshift(submission);
-  }
-
-  saveStore(store);
-  return submission;
-}
-
-/**
- * Score a project submission (Judging console)
- */
-export function scoreSubmission(
+// ------------------------------------------------------------------ admin
+export const updateEventConfig = (patch: Partial<EventConfig>) => call("updateEventConfig", patch as Record<string, unknown>);
+export const createCoordinator = (c: { name: string; email: string; password: string; phone?: string; employeeId?: string; permissions?: CoordinatorPermission[] }) =>
+  call("createCoordinator", c);
+export const toggleCoordinatorPermission = (coordinatorId: string, permission: CoordinatorPermission, enabled?: boolean) =>
+  call("setCoordinatorPermission", { coordinatorId, permission, enabled });
+export const setCoordinatorStatus = (coordinatorId: string, status: "active" | "disabled") =>
+  call("setCoordinatorStatus", { coordinatorId, status });
+export const saveResource = (r: Partial<EventResource>) => call("saveResource", r as Record<string, unknown>);
+export const setResourcePublished = (id: string, published: boolean) => call("setResourcePublished", { id, published });
+export const deleteResource = (id: string) => call("deleteResource", { id });
+export const saveAnnouncement = (a: Partial<Announcement>) => call("saveAnnouncement", a as Record<string, unknown>);
+export const setAnnouncementPublished = (id: string, published: boolean) => call("setAnnouncementPublished", { id, published });
+export const deleteAnnouncement = (id: string) => call("deleteAnnouncement", { id });
+export const scoreSubmission = (
   submissionId: string,
-  scores: {
-    innovation: number;
-    ai_prompting: number;
-    tech_execution: number;
-    presentation: number;
-    feedback?: string;
-  }
-) {
-  const store = loadStore();
-  const sub = store.submissions.find((s) => s.id === submissionId);
-  if (!sub) return;
+  scores: { innovation: number; ai_prompting: number; tech_execution: number; presentation: number; feedback?: string },
+) => call("scoreSubmission", { submissionId, ...scores });
+export const issueCertificates = () =>
+  call<{ issued: number; skipped: { registration: string; reason: string }[] }>("issueCertificates");
+export const revokeCertificate = (certificateId: string) => call("revokeCertificate", { certificateId });
 
-  const total = scores.innovation + scores.ai_prompting + scores.tech_execution + scores.presentation;
-  sub.scores = {
-    ...scores,
-    total,
-  };
-  sub.status = "evaluated";
-  saveStore(store);
-}
-
-/**
- * Support Ticket: Create
- */
-export function createSupportTicket(ticket: {
-  userId: string;
-  userName: string;
-  registrationId?: string;
-  category: SupportTicket["category"];
-  subject: string;
-  message: string;
-  attachmentUrl?: string;
-}): SupportTicket {
-  const store = loadStore();
-  const codeNum = String(store.supportTickets.length + 1).padStart(3, "0");
-
-  const newTicket: SupportTicket = {
-    id: `sup-${Date.now()}`,
-    ticket_code: `SUP-2026-${codeNum}`,
-    user_id: ticket.userId,
-    user_name: ticket.userName,
-    registration_id: ticket.registrationId,
-    category: ticket.category,
-    subject: ticket.subject,
-    message: ticket.message,
-    attachment_url: ticket.attachmentUrl,
-    status: "open",
-    responses: [],
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  };
-
-  store.supportTickets.unshift(newTicket);
-  saveStore(store);
-  return newTicket;
-}
-
-/**
- * Support Ticket: Reply
- */
-export function replySupportTicket(
-  ticketId: string,
-  reply: {
-    senderName: string;
-    senderRole: User["role"];
-    message: string;
-  }
-) {
-  const store = loadStore();
-  const ticket = store.supportTickets.find((t) => t.id === ticketId);
-  if (!ticket) return;
-
-  ticket.responses.push({
-    id: `msg-${Date.now()}`,
-    sender_name: reply.senderName,
-    sender_role: reply.senderRole,
-    message: reply.message,
-    created_at: new Date().toISOString(),
-  });
-  ticket.status = "in_progress";
-  ticket.updated_at = new Date().toISOString();
-
-  saveStore(store);
-}
+// ------------------------------------------------------------------ public
+export const verifyCertificate = (certificateId: string) =>
+  call<{ certificate: Certificate | null; revoked: boolean }>("verifyCertificate", { certificateId }, false);
 
 /**
  * Export data to CSV
@@ -718,8 +259,8 @@ export function generateCsvData(type: "participants" | "attendance" | "payments"
     const headers = [
       "Payment ID",
       "Registration Number",
-      "Razorpay Order ID",
-      "Razorpay Payment ID",
+      "UTR",
+      "Verified By",
       "Amount (INR)",
       "Payment Method",
       "Status",
@@ -730,8 +271,8 @@ export function generateCsvData(type: "participants" | "attendance" | "payments"
       return [
         p.id,
         reg?.registration_number || "N/A",
-        p.razorpay_order_id,
-        p.razorpay_payment_id,
+        `"${p.utr_number || ""}"`,
+        `"${reg?.verified_by_name || ""}"`,
         p.amount,
         `"${p.payment_method || "Online"}"`,
         p.status.toUpperCase(),

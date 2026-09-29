@@ -1,56 +1,70 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { Search, Filter, CheckCircle2, Clock, Users, ArrowUpDown } from "lucide-react";
-import { loadStore, processCheckIn } from "@/lib/store";
+import React, { useMemo, useState } from "react";
+import { Search, CheckCircle2, Clock } from "lucide-react";
+import { processCheckIn, useStore } from "@/lib/store";
 import { useAuth } from "@/lib/context/AuthContext";
+import type { CoordinatorPermission } from "@/lib/types";
 
 export default function CoordinatorParticipantsPage() {
-  const { currentUser } = useAuth();
-  const coordinatorName = currentUser?.name || "K. V. Chaitanya";
+  const { role, permissions } = useAuth();
+  const can = (p: CoordinatorPermission) => role === "admin" || permissions.includes(p);
+  const canCheckIn = can("CHECKIN_MANAGE");
+  const canSeeAttendance = can("CHECKIN_VIEW") || canCheckIn;
 
-  const [participants, setParticipants] = useState<any[]>([]);
+  const store = useStore();
+  const { eventConfig } = store;
   const [searchTerm, setSearchTerm] = useState("");
-  
+  const [busyReg, setBusyReg] = useState<string | null>(null);
+  const [rowMessage, setRowMessage] = useState<{ reg: string; kind: "ok" | "warn" | "error"; text: string } | null>(null);
+
   // Filters
   const [statusFilter, setStatusFilter] = useState("all"); // all, checked_in, not_checked_in
   const [isteFilter, setIsteFilter] = useState("all"); // all, iste, non-iste
   const [branchFilter, setBranchFilter] = useState("all");
   const [yearFilter, setYearFilter] = useState("all");
 
-  const refreshList = () => {
-    const store = loadStore();
-    const list = store.registrations.map((reg) => {
-      const profile = store.profiles.find((p) => p.id === reg.participant_id);
-      const user = store.users.find((u) => u.id === profile?.user_id);
-      const att = store.attendance.find(
-        (a) => a.registration_number.toUpperCase() === reg.registration_number.toUpperCase()
-      );
+  const participants = useMemo(
+    () =>
+      store.registrations.map((reg) => {
+        const profile = store.profiles.find((p) => p.id === reg.participant_id);
+        const user = profile ? store.users.find((u) => u.id === profile.user_id) : undefined;
+        const att = store.attendance.find(
+          (a) => a.registration_number.toUpperCase() === reg.registration_number.toUpperCase()
+        );
+        return {
+          id: reg.id,
+          registrationNumber: reg.registration_number,
+          name: profile?.certificate_name || user?.name || "Participant",
+          rollNumber: profile?.roll_number || "—",
+          year: profile?.year || "—",
+          branch: profile?.branch || "—",
+          section: profile?.section || "—",
+          isteMember: profile?.iste_member ?? false,
+          paymentStatus: reg.payment_status,
+          confirmed: reg.registration_status === "confirmed" && reg.payment_status === "success",
+          isCheckedIn: !!att,
+          checkInTime: att?.check_in_time,
+        };
+      }),
+    [store]
+  );
 
-      return {
-        id: reg.id,
-        registrationNumber: reg.registration_number,
-        name: profile?.certificate_name || user?.name || "Participant",
-        rollNumber: profile?.roll_number || "N/A",
-        year: profile?.year || "4th Year",
-        branch: profile?.branch || "AI & DS",
-        section: profile?.section || "A",
-        isteMember: profile?.iste_member ?? false,
-        paymentStatus: reg.payment_status,
-        isCheckedIn: !!att,
-        checkInTime: att?.check_in_time,
-      };
-    });
-    setParticipants(list);
-  };
-
-  useEffect(() => {
-    refreshList();
-  }, []);
-
-  const handleManualCheckin = (regNumber: string) => {
-    processCheckIn(regNumber, coordinatorName);
-    refreshList();
+  const handleManualCheckin = async (regNumber: string) => {
+    setBusyReg(regNumber);
+    setRowMessage(null);
+    try {
+      const res = await processCheckIn(regNumber);
+      setRowMessage({
+        reg: regNumber,
+        kind: res.status === "verified" ? "ok" : res.status === "already_checked_in" ? "warn" : "error",
+        text: res.message,
+      });
+    } catch (err) {
+      setRowMessage({ reg: regNumber, kind: "error", text: err instanceof Error ? err.message : "Check-in failed." });
+    } finally {
+      setBusyReg(null);
+    }
   };
 
   const filtered = participants.filter((p) => {
@@ -75,184 +89,218 @@ export default function CoordinatorParticipantsPage() {
     return true;
   });
 
+  const selects = [
+    {
+      id: "filter-status",
+      label: "Attendance",
+      value: statusFilter,
+      set: setStatusFilter,
+      options: [
+        ["all", "All Status"],
+        ["checked_in", "Checked In"],
+        ["not_checked_in", "Not Checked In"],
+      ],
+    },
+    {
+      id: "filter-iste",
+      label: "ISTE Status",
+      value: isteFilter,
+      set: setIsteFilter,
+      options: [
+        ["all", "All Memberships"],
+        ["iste", `ISTE Member (₹${eventConfig.iste_fee})`],
+        ["non-iste", `Non-ISTE (₹${eventConfig.non_iste_fee})`],
+      ],
+    },
+    {
+      id: "filter-branch",
+      label: "Branch",
+      value: branchFilter,
+      set: setBranchFilter,
+      options: [
+        ["all", "All Branches"],
+        ["AI & DS", "AI & DS"],
+        ["IT", "IT"],
+        ["CSE", "CSE"],
+        ["ECE", "ECE"],
+        ["EEE", "EEE"],
+        ["Mechanical", "Mechanical"],
+        ["Civil", "Civil"],
+      ],
+    },
+    {
+      id: "filter-year",
+      label: "Year of Study",
+      value: yearFilter,
+      set: setYearFilter,
+      options: [
+        ["all", "All Years"],
+        ["4th Year", "4th Year"],
+        ["3rd Year", "3rd Year"],
+        ["2nd Year", "2nd Year"],
+        ["1st Year", "1st Year"],
+      ],
+    },
+  ] as const;
+
   return (
     <div className="max-w-6xl mx-auto space-y-6">
-      
-      {/* Title */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* Header plane */}
+      <header className="frame bg-paper p-5 sm:p-6 space-y-1">
+        <h1 className="page-title">Participant Roster</h1>
+        <p className="text-sm text-ink-2 num" aria-live="polite">
+          Showing {filtered.length} of {participants.length} registered students.
+        </p>
+      </header>
+
+      {/* Search & filter controls */}
+      <div className="frame bg-paper p-5 space-y-4">
         <div>
-          <h1 className="text-2xl font-black text-white flex items-center gap-2">
-            <Users className="w-6 h-6 text-purple-400" />
-            <span>Participant Roster</span>
-          </h1>
-          <p className="text-xs text-slate-400">
-            Showing {filtered.length} of {participants.length} registered students.
-          </p>
+          <label htmlFor="roster-search" className="field-label">
+            Search participants
+          </label>
+          <div className="relative">
+            <Search
+              className="w-5 h-5 text-ink-3 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
+              aria-hidden="true"
+            />
+            <input
+              id="roster-search"
+              type="search"
+              autoComplete="off"
+              spellCheck={false}
+              placeholder="Name, roll number, or registration ID (e.g. P2P-2026-A8F92X)"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="field pl-11 text-base min-h-[52px]"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 min-[420px]:grid-cols-2 lg:grid-cols-4 gap-3">
+          {selects.filter((f) => f.id !== "filter-status" || canSeeAttendance).map((f) => (
+            <div key={f.id}>
+              <label htmlFor={f.id} className="field-label">
+                {f.label}
+              </label>
+              <select
+                id={f.id}
+                value={f.value}
+                onChange={(e) => f.set(e.target.value)}
+                className="field"
+              >
+                {f.options.map(([v, l]) => (
+                  <option key={v} value={v}>
+                    {l}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* Search & Filter Controls matching Section 38 */}
-      <div className="rounded-2xl bg-slate-900 border border-slate-800 p-4 space-y-3 shadow-sm">
-        
-        {/* Search Input */}
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="Search by name, roll number, or registration ID (e.g. P2P-2026-A8F92X)..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs focus:border-purple-400 focus:outline-none"
-          />
-          <Search className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
-        </div>
-
-        {/* Filter Pills */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-          <div>
-            <label className="text-[10px] uppercase font-bold text-slate-400 block mb-1">
-              Attendance
-            </label>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-white text-xs focus:outline-none"
-            >
-              <option value="all">All Status</option>
-              <option value="checked_in">Checked In</option>
-              <option value="not_checked_in">Not Checked In</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="text-[10px] uppercase font-bold text-slate-400 block mb-1">
-              ISTE Status
-            </label>
-            <select
-              value={isteFilter}
-              onChange={(e) => setIsteFilter(e.target.value)}
-              className="w-full px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-white text-xs focus:outline-none"
-            >
-              <option value="all">All Memberships</option>
-              <option value="iste">ISTE Member (₹50)</option>
-              <option value="non-iste">Non-ISTE (₹100)</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="text-[10px] uppercase font-bold text-slate-400 block mb-1">
-              Branch
-            </label>
-            <select
-              value={branchFilter}
-              onChange={(e) => setBranchFilter(e.target.value)}
-              className="w-full px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-white text-xs focus:outline-none"
-            >
-              <option value="all">All Branches</option>
-              <option value="AI & DS">AI & DS</option>
-              <option value="IT">IT</option>
-              <option value="CSE">CSE</option>
-              <option value="ECE">ECE</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="text-[10px] uppercase font-bold text-slate-400 block mb-1">
-              Year of Study
-            </label>
-            <select
-              value={yearFilter}
-              onChange={(e) => setYearFilter(e.target.value)}
-              className="w-full px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-white text-xs focus:outline-none"
-            >
-              <option value="all">All Years</option>
-              <option value="4th Year">4th Year</option>
-              <option value="3rd Year">3rd Year</option>
-              <option value="2nd Year">2nd Year</option>
-            </select>
-          </div>
-        </div>
-
-      </div>
-
-      {/* Participants Table matching Section 38 */}
-      <div className="rounded-2xl bg-slate-900 border border-slate-800 overflow-hidden shadow-xl">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-950/80 text-slate-400 font-semibold border-b border-slate-800">
+      {/* Participants table */}
+      <div className="frame bg-paper overflow-x-auto">
+        <table className="table-planes">
+          <thead>
+            <tr>
+              <th scope="col">Registration ID</th>
+              <th scope="col">Participant Name</th>
+              <th scope="col">Roll Number</th>
+              <th scope="col">Branch &amp; Year</th>
+              <th scope="col">Sec</th>
+              <th scope="col">ISTE</th>
+              <th scope="col">Payment</th>
+              <th scope="col">Attendance</th>
+              <th scope="col" className="text-right">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.length === 0 && (
               <tr>
-                <th className="p-3.5">Registration ID</th>
-                <th className="p-3.5">Participant Name</th>
-                <th className="p-3.5">Roll Number</th>
-                <th className="p-3.5">Branch & Year</th>
-                <th className="p-3.5">Sec</th>
-                <th className="p-3.5">ISTE</th>
-                <th className="p-3.5">Payment</th>
-                <th className="p-3.5">Attendance</th>
-                <th className="p-3.5 text-right">Action</th>
+                <td colSpan={9} className="text-ink-2 py-8 text-center">
+                  No participants match these filters.
+                </td>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800/80 text-slate-300">
-              {filtered.map((item) => (
-                <tr key={item.id} className="hover:bg-slate-800/40 transition-colors">
-                  <td className="p-3.5 font-mono font-bold text-cyan-300">
-                    {item.registrationNumber}
-                  </td>
-                  <td className="p-3.5 font-bold text-white">
-                    {item.name}
-                  </td>
-                  <td className="p-3.5 font-mono text-slate-300">
-                    {item.rollNumber}
-                  </td>
-                  <td className="p-3.5">
-                    {item.branch} • {item.year.split(" ")[0]}
-                  </td>
-                  <td className="p-3.5 text-center font-bold">
-                    {item.section}
-                  </td>
-                  <td className="p-3.5">
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                      item.isteMember ? "bg-emerald-500/20 text-emerald-300" : "bg-slate-800 text-slate-400"
-                    }`}>
-                      {item.isteMember ? "ISTE" : "Regular"}
+            )}
+            {filtered.map((item) => (
+              <tr key={item.id}>
+                <td className="font-mono text-xs font-bold whitespace-nowrap">
+                  {item.registrationNumber}
+                </td>
+                <td className="font-bold whitespace-nowrap">{item.name}</td>
+                <td className="font-mono text-xs text-ink-2 whitespace-nowrap">{item.rollNumber}</td>
+                <td className="whitespace-nowrap">
+                  {item.branch} · {item.year.split(" ")[0]}
+                </td>
+                <td className="font-bold text-center">{item.section}</td>
+                <td>
+                  <span className={`tag ${item.isteMember ? "tag-info" : ""}`}>
+                    {item.isteMember ? "ISTE" : "Regular"}
+                  </span>
+                </td>
+                <td>
+                  <span
+                    className={`tag ${
+                      item.paymentStatus === "success"
+                        ? "tag-ok"
+                        : item.paymentStatus === "failed"
+                        ? "tag-alert"
+                        : "tag-pending"
+                    }`}
+                  >
+                    {item.paymentStatus}
+                  </span>
+                </td>
+                <td>
+                  {!canSeeAttendance ? (
+                    <span className="text-xs text-ink-2">—</span>
+                  ) : item.isCheckedIn ? (
+                    <span className="tag tag-ok">
+                      <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
+                      <span className="font-mono normal-case">{item.checkInTime || "In"}</span>
                     </span>
-                  </td>
-                  <td className="p-3.5">
-                    <span className="text-[10px] font-bold uppercase text-emerald-400">
-                      {item.paymentStatus}
+                  ) : (
+                    <span className="tag tag-pending">
+                      <Clock className="w-3.5 h-3.5" aria-hidden="true" />
+                      <span>Pending</span>
                     </span>
-                  </td>
-                  <td className="p-3.5">
-                    {item.isCheckedIn ? (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400">
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        <span>{item.checkInTime || "In"}</span>
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 text-[11px] text-amber-400">
-                        <Clock className="w-3.5 h-3.5" />
-                        <span>Pending</span>
-                      </span>
-                    )}
-                  </td>
-                  <td className="p-3.5 text-right">
-                    {!item.isCheckedIn ? (
-                      <button
-                        onClick={() => handleManualCheckin(item.registrationNumber)}
-                        className="px-2.5 py-1 rounded bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/40 text-[10px] font-bold transition-colors"
-                      >
-                        Check In
-                      </button>
-                    ) : (
-                      <span className="text-[10px] text-slate-500">Verified</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  )}
+                </td>
+                <td className="text-right">
+                  {item.isCheckedIn ? (
+                    <span className="text-xs text-ink-2">Verified</span>
+                  ) : !canCheckIn ? (
+                    <span className="text-xs text-ink-2">—</span>
+                  ) : !item.confirmed ? (
+                    <span className="text-xs text-ink-2">Payment not verified</span>
+                  ) : (
+                    <button
+                      onClick={() => handleManualCheckin(item.registrationNumber)}
+                      disabled={busyReg !== null}
+                      aria-busy={busyReg === item.registrationNumber}
+                      className="btn btn-sm min-h-[44px]"
+                    >
+                      {busyReg === item.registrationNumber ? "Checking in…" : "Check In"}
+                    </button>
+                  )}
+                  {rowMessage?.reg === item.registrationNumber && (
+                    <span
+                      role={rowMessage.kind === "error" ? "alert" : "status"}
+                      className={`block text-xs mt-1 max-w-[16rem] ml-auto text-left ${
+                        rowMessage.kind === "ok" ? "text-ok" : rowMessage.kind === "warn" ? "text-ink" : "text-alert"
+                      }`}
+                    >
+                      {rowMessage.text}
+                    </span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
-
     </div>
   );
 }

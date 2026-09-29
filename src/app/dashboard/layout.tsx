@@ -1,8 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Ticket,
   User,
@@ -12,12 +12,31 @@ import {
   Send,
   Award,
   HelpCircle,
-  Sparkles,
-  LogOut,
-  ChevronRight,
-  ShieldAlert
 } from "lucide-react";
 import { useAuth } from "@/lib/context/AuthContext";
+import { useStore } from "@/lib/store";
+
+function DashboardSkeleton() {
+  return (
+    <div className="flex-1 flex flex-col" aria-busy="true" aria-live="polite">
+      <div className="bg-paper rule-b">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-4">
+          <span className="h-5 w-40 bg-field-2 animate-pulse" />
+          <span className="h-4 w-28 bg-field-2 animate-pulse" />
+          <span className="h-4 w-24 bg-field-2 animate-pulse" />
+        </div>
+      </div>
+      <div className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-4">
+        <div className="frame bg-paper px-5 py-5 sm:px-6 space-y-3">
+          <span className="block h-7 w-64 max-w-full bg-field-2 animate-pulse" />
+          <span className="block h-4 w-80 max-w-full bg-field-2 animate-pulse" />
+        </div>
+        <div className="frame bg-paper h-40 animate-pulse" />
+        <span className="sr-only">Loading your participant dashboard…</span>
+      </div>
+    </div>
+  );
+}
 
 export default function UserDashboardLayout({
   children,
@@ -25,7 +44,19 @@ export default function UserDashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const { role, currentProfile, currentUser, logout, quickSwitchRole } = useAuth();
+  const router = useRouter();
+  const { loading, role, currentProfile, currentUser, currentRegistration } = useAuth();
+  const { eventConfig } = useStore();
+
+  const authorized = role === "user";
+
+  useEffect(() => {
+    if (!loading && !authorized) {
+      router.replace(`/login?next=${encodeURIComponent(pathname || "/dashboard")}`);
+    }
+  }, [loading, authorized, pathname, router]);
+
+  if (loading || !authorized) return <DashboardSkeleton />;
 
   const navItems = [
     { name: "Overview & Ticket", href: "/dashboard", icon: Ticket },
@@ -34,93 +65,92 @@ export default function UserDashboardLayout({
     { name: "Resources", href: "/dashboard/resources", icon: BookOpen },
     { name: "My Team", href: "/dashboard/team", icon: Users },
     { name: "Project Submission", href: "/dashboard/submission", icon: Send },
+    { name: "Certificate", href: "/dashboard/certificate", icon: Award },
     { name: "Support Desk", href: "/dashboard/support", icon: HelpCircle },
   ];
 
+  const participantName = currentProfile?.certificate_name || currentUser?.name || "Participant";
+  const rollNumber = currentProfile?.roll_number;
+  const ticketId = currentRegistration?.registration_number;
+
+  // Status tag for the identity strip, driven by the real registration
+  let statusLabel = "Not registered";
+  let statusClass = "tag-off";
+  if (currentRegistration) {
+    if (currentRegistration.registration_status === "cancelled") {
+      statusLabel = "Cancelled";
+      statusClass = "tag-off";
+    } else if (currentRegistration.payment_status === "failed") {
+      statusLabel = "Payment rejected";
+      statusClass = "tag-alert";
+    } else if (currentRegistration.payment_status === "refunded") {
+      statusLabel = "Refunded";
+      statusClass = "tag-off";
+    } else if (currentRegistration.payment_status === "success" && currentRegistration.registration_status === "confirmed") {
+      statusLabel = "Paid";
+      statusClass = "tag-ok";
+    } else {
+      statusLabel = "Payment under verification";
+      statusClass = "tag-pending";
+    }
+  }
+
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col md:flex-row border-t border-slate-900">
-      
-      {/* Sidebar Navigation */}
-      <aside className="w-full md:w-64 bg-slate-900/60 border-r border-slate-800 p-4 sm:p-6 flex flex-col justify-between flex-shrink-0">
-        <div className="space-y-6">
-          
-          {/* User profile cardlet */}
-          <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800/80 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center font-bold text-slate-950 text-sm">
-              {currentProfile?.certificate_name?.[0] || currentUser?.name?.[0] || "M"}
-            </div>
-            <div className="min-w-0 flex-1">
-              <span className="text-[10px] font-bold uppercase text-cyan-400 block tracking-wider">
-                Participant
+    <div className="flex-1 flex flex-col">
+
+      {/* Identity strip */}
+      <div className="bg-paper rule-b print:hidden">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center gap-x-5 gap-y-2">
+          <div className="min-w-0 flex-1 flex flex-wrap items-baseline gap-x-4 gap-y-1">
+            <span className="font-semibold wide text-ink text-base truncate max-w-full">
+              {participantName}
+            </span>
+            {rollNumber && (
+              <span className="text-xs text-ink-2">
+                Roll <span className="font-mono text-ink">{rollNumber}</span>
               </span>
-              <span className="font-bold text-white text-xs sm:text-sm truncate block">
-                {currentProfile?.certificate_name || currentUser?.name || "Manoj N"}
+            )}
+            {ticketId && (
+              <span className="text-xs text-ink-2">
+                Ticket <span className="font-mono font-bold text-ink">{ticketId}</span>
               </span>
-              <span className="text-[10px] text-slate-400 font-mono block">
-                {currentProfile?.roll_number || "22011A3142"}
-              </span>
-            </div>
+            )}
+            <span className={`tag ${statusClass}`}>{statusLabel}</span>
           </div>
 
-          {/* Navigation Links */}
-          <nav className="space-y-1">
-            {navItems.map((item) => {
-              const IconComp = item.icon;
-              const isActive = pathname === item.href;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                    isActive
-                      ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm"
-                      : "text-slate-400 hover:text-white hover:bg-slate-800/60"
-                  }`}
-                >
-                  <IconComp className={`w-4 h-4 ${isActive ? "text-cyan-400" : "text-slate-500"}`} />
-                  <span>{item.name}</span>
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
-
-        {/* Bottom logout / status */}
-        <div className="pt-6 border-t border-slate-800/80 space-y-3 mt-6">
-          <div className="text-[10px] text-slate-400 flex items-center justify-between">
-            <span>Event Date</span>
-            <span className="font-bold text-slate-300">30 Sep 2026</span>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-ink-2 hidden sm:inline">
+              Event date <span className="font-bold text-ink num">{eventConfig.date_formatted}</span>
+            </span>
           </div>
-          <button
-            onClick={() => logout()}
-            className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-slate-950 hover:bg-slate-800 text-slate-400 hover:text-white text-xs font-medium border border-slate-800 transition-colors"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            <span>Sign Out</span>
-          </button>
         </div>
-      </aside>
+      </div>
+
+      {/* Section rail */}
+      <nav aria-label="Participant sections" className="bg-paper rule-b print:hidden">
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 flex overflow-x-auto">
+          {navItems.map((item) => {
+            const IconComp = item.icon;
+            const isActive = pathname === item.href;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-current={isActive ? "page" : undefined}
+                className="rail-item shrink-0"
+              >
+                <IconComp className="w-4 h-4" aria-hidden="true" />
+                <span>{item.name}</span>
+              </Link>
+            );
+          })}
+        </div>
+      </nav>
 
       {/* Main Content Area */}
-      <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
-        {/* Role Notice if someone is exploring with different role */}
-        {role !== "user" && (
-          <div className="mb-6 p-3 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <ShieldAlert className="w-4 h-4 text-amber-400 flex-shrink-0" />
-              <span>You are viewing the Participant Portal in <strong>{role.toUpperCase()}</strong> mode.</span>
-            </div>
-            <button
-              onClick={() => quickSwitchRole("user")}
-              className="px-2.5 py-1 rounded bg-amber-400 text-slate-950 font-bold text-[10px] hover:bg-amber-300"
-            >
-              Switch to Student View
-            </button>
-          </div>
-        )}
-
+      <div className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         {children}
-      </main>
+      </div>
 
     </div>
   );

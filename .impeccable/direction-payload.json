@@ -1,0 +1,101 @@
+{
+  "title": "Choose the visual world for Prompt to Production",
+  "question": "The roll picked Engineering Drawing Sheet. Keep it, take an alternate, or re-roll.",
+  "options": [
+    {
+      "id": "assigned",
+      "label": "Engineering Drawing Sheet",
+      "kicker": "THE ROLL",
+      "lineage": "B.Tech Engineering Graphics sheets: A2 drafting paper, border, title block, dimension lines",
+      "thesis": "The workshop drawn as an engineering drawing: a prompt goes in, a dimensioned product comes out.",
+      "palette": ["#F7F9FC", "#002E6E", "#00BAF2", "#1B1F27", "#E53935"],
+      "materials": ["drafting paper with a fine grid", "Paytm-navy ink line work", "stamped title-block cells", "Paytm-sky markup"],
+      "viewport": "A full-width drawing sheet with a ruled border and zone letters. 'PROMPT → PRODUCTION' is set as the drawing's subject. A title block in the lower right holds the date, time, venue, fee and seats with a REGISTER stamp, and the official poster is pinned into the sheet as a detail view.",
+      "risk": "If the line work is timid it reads as a blueprint pastiche; it has to be drawn with real drafting discipline (line weights, zones, sheet numbers).",
+      "raised": [
+        {"from": "Mondo 2000 duotone", "raise": "Two inks only, Paytm navy and Paytm sky, carry every rule, box, type and speaker photo (duotoned); no third decorative colour."},
+        {"from": "Emission-line rail", "raise": "State is shown with standard drawing line types, not colour alone: solid thick = confirmed/live, dashed hidden-line = pending, chain line = in review, struck = cancelled."},
+        {"from": "Wildstyle blackbook", "raise": "Every page carries its fast version: the title block is the one-glance summary (who, when, where, status) before the detail."}
+      ],
+      "hero": "https://impeccable.style/worlds/cards/operate-c-emission-line-rail-hero.webp"
+    },
+    {
+      "id": "model-pick",
+      "label": "Paytm QR Standee",
+      "kicker": "IMPECCABLE’S PICK",
+      "lineage": "the blue Paytm QR stand at every shop counter in India",
+      "thesis": "The event as a Paytm counter: scan, pay, you're in; the ticket and gate check-in are the hero.",
+      "palette": ["#00BAF2", "#002E6E", "#FFFFFF", "#FFD200"],
+      "materials": ["acrylic standee", "printed QR plates", "payment-success receipt tape"],
+      "viewport": "A giant standee-shaped hero in Paytm sky with the event QR and seats-left counter, and a receipt strip listing date, venue and fee.",
+      "risk": "Closest to what Paytm's own marketing already looks like; it can read as a Paytm ad rather than an NBKRIST event."
+    },
+    {
+      "id": "challenger-seven-segment",
+      "label": "Seven-Segment Scoreboard",
+      "verdict": "competitive",
+      "lineage": "LED clocks, scoreboards and price totems",
+      "thesis": "The event as a live scoreboard: countdown, seats left, check-ins and the leaderboard in LED segments.",
+      "palette": ["#0E0F10", "#FF3B2F", "#FFB000", "#2A2C2E"],
+      "materials": ["matte black panel", "LED segments with ghost cells"],
+      "viewport": "A black panel with a huge segment countdown to 9:00 AM and a seats-left counter; event facts on smaller segment rows.",
+      "case": "Strong for the countdown, check-in and leaderboard, weaker for speaker/institution identity and long forms.",
+      "risk": "Reads as a gimmick on the registration and admin forms.",
+      "hero": "https://impeccable.style/worlds/cards/signals-instruments-seven-segment-alarm-clock-hero.webp"
+    },
+    {
+      "id": "challenger-mondo",
+      "label": "Mondo 2000 Duotone Spread",
+      "verdict": "declined",
+      "lineage": "early-90s tech magazine spreads",
+      "thesis": "Two fluorescent inks for everything, angled headline slabs.",
+      "palette": ["#FF6A00", "#00E5FF", "#111111"],
+      "materials": ["duotone print", "glossary margin"],
+      "viewport": "Angled headline slab across a duotone speaker photo.",
+      "case": "Students and faculty don't identify with it, and the angled slabs hurt event-fact clarity.",
+      "risk": "Reads as a retro costume.",
+      "kept": "The two-ink discipline across every element.",
+      "hero": "https://impeccable.style/worlds/cards/digital-design-canon-mondo-tech-utopian-spread-hero.webp"
+    },
+    {
+      "id": "challenger-rail",
+      "label": "Emission-Line Rail",
+      "verdict": "declined",
+      "lineage": "spectrogram viewing plates",
+      "thesis": "Everything hangs off one rail; state is line form, not hue.",
+      "palette": ["#2B2D31", "#E8E4DA", "#FFD24A"],
+      "materials": ["charcoal continuum", "hairline emission lines"],
+      "viewport": "One off-centre rail with event sections as ticks.",
+      "case": "Too abstract for a campus event; the facts get lost.",
+      "risk": "Illegible to first-time visitors.",
+      "kept": "State carried by line form (solid, dashed, struck).",
+      "hero": "https://impeccable.style/worlds/cards/operate-c-emission-line-rail-hero.webp"
+    },
+    {
+      "id": "challenger-wildstyle",
+      "label": "Wildstyle Blackbook",
+      "verdict": "declined",
+      "lineage": "graffiti blackbook pages",
+      "thesis": "Interlocked letters with a fast throw-up version.",
+      "palette": ["#F2EAD8", "#111111", "#FF4FA3", "#3AD1FF"],
+      "materials": ["marker on paper"],
+      "viewport": "A wildstyle 'P2P' piece with a clean throw-up beside it.",
+      "case": "Wrong register for an official institute + Paytm event.",
+      "risk": "Unreadable and off-brand.",
+      "kept": "Every page gets a fast one-glance version.",
+      "hero": "https://impeccable.style/worlds/cards/vernacular-ephemera-wildstyle-blackbook-page-hero.webp"
+    }
+  ],
+  "reroll": {"registers": ["safer", "bolder"]},
+  "buildPath": {"value": "code", "toggle": false},
+  "canon": true,
+  "canonCard": {
+    "label": "The category standard",
+    "thesis": "A clean university/tech event site, executed well.",
+    "palette": ["#FFFFFF", "#0F172A", "#00BAF2"],
+    "materials": ["clean grid", "speaker photography", "poster"],
+    "viewport": "Poster and event facts side by side, a clear Register button, then speakers and schedule.",
+    "risk": "Looks like every other college event page."
+  },
+  "steer": true
+}

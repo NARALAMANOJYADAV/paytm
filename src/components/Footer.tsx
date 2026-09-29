@@ -1,127 +1,137 @@
 import React from "react";
 import Link from "next/link";
-import { MapPin, Calendar, Clock, Mail, Phone, ExternalLink, Shield, Sparkles } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Heart } from "lucide-react";
+import { LogoGlyph } from "@/components/Logo";
+
+const linkCls =
+  "group inline-flex min-h-9 w-fit items-center gap-1 text-[#f4f3ef] underline decoration-[#f4f3ef]/25 underline-offset-[5px] hover:decoration-[#f2b544] transition-colors";
+const arrowCls =
+  "w-3.5 h-3.5 text-[#f2b544] transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5";
+const infoLabel = "font-mono text-[0.6875rem] uppercase tracking-[0.12em] text-[#8c8b85] mb-0.5";
+
+const colHead = "text-[#f4f3ef] text-[0.9375rem] mb-2 sm:mb-5 lg:mb-10";
 
 export default function Footer() {
   return (
-    <footer className="bg-slate-950 border-t border-slate-800/80 text-slate-400 text-xs sm:text-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
-          {/* Col 1: Overview */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center font-black text-slate-950 text-xs shadow-md shadow-cyan-500/20">
-                P2P
-              </div>
-              <span className="font-extrabold text-white text-base tracking-tight">
-                Prompt to Production
-              </span>
+    <footer className="bg-[#1a1a18] text-[#f4f3ef] print:hidden">
+      <div className="max-w-[1400px] mx-auto px-5 sm:px-8 pt-8 sm:pt-20">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-7 sm:gap-14 lg:gap-8">
+          {/* Statement */}
+          <div className="lg:col-span-5 space-y-4 sm:space-y-8">
+            <h2 className="text-[clamp(2rem,5vw,4.25rem)] font-semibold tracking-[-0.045em] leading-[0.98]">
+              From prompts.
+              <br />
+              To production.
+            </h2>
+            <p className="text-[#b3b2ab] text-[0.9375rem] sm:text-base leading-relaxed max-w-[44ch]">
+              A one-day, hands-on Generative AI workshop and build challenge, conducted by{" "}
+              <span className="text-[#f4f3ef]">Paytm</span> for the Department of IT &amp; AI&amp;DS, NBKRIST, in
+              association with ISTE.
+            </p>
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+              <Link
+                href="/register"
+                className="inline-flex items-center gap-2 min-h-12 px-6 rounded-full bg-[#f4f3ef] text-[#111113] font-medium hover:bg-white transition-colors"
+              >
+                Register now <ArrowRight className="w-4 h-4" aria-hidden="true" />
+              </Link>
+              <Link
+                href="/verify"
+                className="inline-flex min-h-12 items-center border-b border-[#f4f3ef]/60 hover:border-[#f4f3ef] transition-colors"
+              >
+                Verify a certificate
+              </Link>
             </div>
-            <p className="text-slate-400 text-xs leading-relaxed">
-              Paytm AI Workshop bridging cutting-edge Generative AI research and production software engineering, organized by the Department of IT & AI&DS, NBKRIST in association with ISTE.
-            </p>
-            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-slate-900 border border-slate-800 text-[11px] text-cyan-400">
-              <Sparkles className="w-3 h-3 text-cyan-400" />
-              <span>Certified Hands-on AI Workshop</span>
+          </div>
+
+          {/* Columns: info is a labelled list (quiet), links are bright with an arrow */}
+          <div className="lg:col-span-7 grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-8 sm:gap-y-12">
+            <div>
+              <h3 className={colHead}>Event</h3>
+              <dl className="space-y-3 text-sm sm:text-[0.9375rem]">
+                {[
+                  ["Date", "Wed, 30 Sep 2026"],
+                  ["Time", "9:00 AM – 4:00 PM IST"],
+                  ["Venue", "Seminar Hall, New CSE Block"],
+                  ["Finale", "Thu, 1 Oct · 10:00 AM"],
+                ].map(([k, v]) => (
+                  <div key={k}>
+                    <dt className={infoLabel}>{k}</dt>
+                    <dd className="text-[#dcdbd5] num">{v}</dd>
+                  </div>
+                ))}
+              </dl>
             </div>
-          </div>
-
-          {/* Col 2: Venue & Schedule */}
-          <div className="space-y-3">
-            <h4 className="font-bold text-white text-xs uppercase tracking-wider text-cyan-400">
-              Event Details
-            </h4>
-            <ul className="space-y-2.5 text-xs text-slate-300">
-              <li className="flex items-start gap-2">
-                <Calendar className="w-4 h-4 text-cyan-400 flex-shrink-0 mt-0.5" />
-                <span>Wednesday, 30 September 2026</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <Clock className="w-4 h-4 text-cyan-400 flex-shrink-0 mt-0.5" />
-                <span>9:00 AM – 4:00 PM IST</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <MapPin className="w-4 h-4 text-cyan-400 flex-shrink-0 mt-0.5" />
-                <span>Seminar Hall, New CSE Block, NBKRIST Campus, Vidyanagar - 524413, Andhra Pradesh</span>
-              </li>
-            </ul>
-          </div>
-
-          {/* Col 3: Quick Navigation */}
-          <div className="space-y-3">
-            <h4 className="font-bold text-white text-xs uppercase tracking-wider text-cyan-400">
-              Quick Links
-            </h4>
-            <ul className="space-y-2 text-xs">
-              <li>
-                <Link href="/register" className="hover:text-cyan-400 transition-colors">
-                  Registration Portal
-                </Link>
-              </li>
-              <li>
-                <Link href="/#schedule" className="hover:text-cyan-400 transition-colors">
-                  Workshop Schedule & Agenda
-                </Link>
-              </li>
-              <li>
-                <Link href="/#speakers" className="hover:text-cyan-400 transition-colors">
-                  Paytm & Microsoft Keynotes
-                </Link>
-              </li>
-              <li>
-                <Link href="/leaderboard" className="hover:text-cyan-400 transition-colors">
-                  Live Build Challenge Leaderboard
-                </Link>
-              </li>
-              <li>
-                <Link href="/verify/CERT-P2P-2026-081" className="hover:text-cyan-400 transition-colors">
-                  Certificate Authenticity Verification
-                </Link>
-              </li>
-              <li>
-                <Link href="/login" className="hover:text-cyan-400 transition-colors">
-                  Participant & Staff Login
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Col 4: Institution & Contact */}
-          <div className="space-y-3">
-            <h4 className="font-bold text-white text-xs uppercase tracking-wider text-cyan-400">
-              Organizing Body
-            </h4>
-            <p className="text-xs text-slate-300 font-medium">
-              N.B.K.R. Institute of Science & Technology
-            </p>
-            <p className="text-[11px] text-slate-400">
-              Autonomous Institute Affiliated to JNTUA • Accredited by NAAC with 'A' Grade • NBA Accredited
-            </p>
-            <div className="pt-2 text-xs space-y-1.5 text-slate-400">
-              <div className="flex items-center gap-2">
-                <Mail className="w-3.5 h-3.5 text-cyan-400" />
-                <span>it_aids@nbkrist.org</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Phone className="w-3.5 h-3.5 text-cyan-400" />
-                <span>+91 8624 228247 / 228257</span>
-              </div>
+            <div>
+              <h3 className={colHead}>Explore</h3>
+              <ul className="space-y-0.5 text-sm sm:text-[0.9375rem]">
+                {[
+                  ["Speakers", "/#speakers"],
+                  ["Schedule", "/#schedule"],
+                  ["Leaderboard", "/leaderboard"],
+                  ["FAQ", "/#faq"],
+                  ["Event rules", "/rules"],
+                  ["Sign in", "/login"],
+                ].map(([label, href]) => (
+                  <li key={href}>
+                    <Link href={href} className={linkCls}>
+                      {label}
+                      <ArrowUpRight className={arrowCls} aria-hidden="true" />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="col-span-2 sm:col-span-1">
+              <h3 className={colHead}>Organisers</h3>
+              <dl className="space-y-3 text-sm sm:text-[0.9375rem]">
+                <div>
+                  <dt className={infoLabel}>Organised by</dt>
+                  <dd className="text-[#dcdbd5]">Dept. of IT &amp; AI&amp;DS, NBKRIST</dd>
+                </div>
+                <div>
+                  <dt className={infoLabel}>In association with</dt>
+                  <dd className="text-[#dcdbd5]">ISTE Student Chapter</dd>
+                </div>
+                <div>
+                  <dt className={infoLabel}>Conducted by</dt>
+                  <dd className="text-[#dcdbd5] inline-flex items-center">
+                    Paytm <Heart className="w-3.5 h-3.5 mx-1.5 fill-[#e5484d] text-[#e5484d]" aria-hidden="true" /> AI
+                  </dd>
+                </div>
+                <div>
+                  <dt className={infoLabel}>Contact</dt>
+                  <dd className="flex flex-col">
+                    <a href="mailto:it_aids@nbkrist.org" className={linkCls}>
+                      it_aids@nbkrist.org
+                      <ArrowUpRight className={arrowCls} aria-hidden="true" />
+                    </a>
+                    <a href="tel:+918624228247" className={`${linkCls} num`}>
+                      +91 8624 228247
+                      <ArrowUpRight className={arrowCls} aria-hidden="true" />
+                    </a>
+                  </dd>
+                </div>
+              </dl>
             </div>
           </div>
         </div>
 
-        {/* Bottom Bar */}
-        <div className="mt-12 pt-8 border-t border-slate-900 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-slate-400">
-          <div>
-            © 2026 Department of IT & AI&DS, NBKRIST. In association with ISTE Student Chapter.
-          </div>
-          <div className="flex items-center gap-4">
-            <span className="flex items-center gap-1.5 text-slate-400">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-              All Systems Operational
-            </span>
-            <span className="text-slate-400">•</span>
-            <span>Industry Partner: Paytm</span>
+        {/* Meta row */}
+        <div className="mt-8 sm:mt-16 lg:mt-24 flex flex-col sm:flex-row sm:items-end justify-between gap-1 sm:gap-2 text-xs sm:text-sm text-[#b3b2ab]">
+          <p>Vidyanagar, S.P.S.R. Nellore Dist, Andhra Pradesh 524413</p>
+          <p>© 2026 Dept. of IT &amp; AI&amp;DS, NBKRIST</p>
+        </div>
+      </div>
+
+      {/* Giant wordmark */}
+      <div className="@container max-w-[1400px] mx-auto px-5 sm:px-8 mt-8 sm:mt-10 overflow-hidden" aria-hidden="true">
+        <div className="select-none text-[#f4f3ef] translate-y-[10%]">
+          <div className="flex items-end gap-[2cqi]">
+            <LogoGlyph className="w-[8cqi] shrink-0 mb-[1.5cqi]" />
+            <p className="font-semibold tracking-[-0.06em] leading-[0.82] whitespace-nowrap text-[9.7cqi]">
+              Prompt to Production
+            </p>
           </div>
         </div>
       </div>

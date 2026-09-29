@@ -1,28 +1,14 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Megaphone, X, Sparkles, AlertCircle } from "lucide-react";
-import { loadStore } from "@/lib/store";
-import { Announcement } from "@/lib/types";
+import { X } from "lucide-react";
+import { useStore } from "@/lib/store";
 
 export default function BroadcastBanner() {
-  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  // Public/participant state already holds only published announcements; staff state holds all of them.
+  const announcements = useStore().announcements.filter((a) => a.published);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [dismissed, setDismissed] = useState(false);
-
-  useEffect(() => {
-    const store = loadStore();
-    const published = store.announcements.filter((a) => a.published);
-    setAnnouncements(published);
-
-    const handleUpdate = () => {
-      const s = loadStore();
-      setAnnouncements(s.announcements.filter((a) => a.published));
-    };
-
-    window.addEventListener("store_updated", handleUpdate);
-    return () => window.removeEventListener("store_updated", handleUpdate);
-  }, []);
 
   useEffect(() => {
     if (announcements.length <= 1) return;
@@ -34,41 +20,30 @@ export default function BroadcastBanner() {
 
   if (dismissed || announcements.length === 0) return null;
 
-  const current = announcements[currentIndex];
+  const current = announcements[currentIndex % announcements.length];
+  const isUrgent = current.priority === "urgent";
 
   return (
-    <div className="relative bg-gradient-to-r from-blue-950 via-cyan-950 to-slate-950 text-cyan-200 border-b border-cyan-500/30 px-3 sm:px-4 py-1.5 sm:py-2 text-[11px] sm:text-xs z-50 shadow-md">
-      <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-3">
-        <div className="flex items-center gap-1.5 sm:gap-2 flex-1 min-w-0">
-          <span className="flex h-2 w-2 relative flex-shrink-0">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
+    <div className="relative z-50 plane-ink text-white" role="status" aria-live="polite">
+      <div className="max-w-[1280px] mx-auto pl-4 sm:pl-6 pr-1 sm:pr-3 min-h-10 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5 flex-1 min-w-0 py-2">
+          <span className="w-2.5 h-2.5 bg-sun shrink-0" aria-hidden="true" />
+          <span className="shrink-0 px-1.5 py-px text-[0.6875rem] font-bold uppercase tracking-[0.08em] border-[1.5px] border-sun text-accent">
+            {isUrgent ? "Live" : "Update"}
           </span>
-          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] uppercase font-bold tracking-wider bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 flex-shrink-0">
-            {current.priority === "urgent" ? (
-              <>
-                <AlertCircle className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-amber-400" />
-                Live
-              </>
-            ) : (
-              <>
-                <Megaphone className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-cyan-400" />
-                Update
-              </>
-            )}
-          </span>
-          <p className="truncate font-medium text-slate-100 text-[11px] sm:text-xs">
-            <strong className="text-cyan-300 mr-1.5">{current.title}</strong>
-            <span className="text-slate-300 hidden md:inline">— {current.content}</span>
+          <p className="truncate text-sm text-white">
+            <strong className="font-bold">{current.title}</strong>
+            <span className="hidden md:inline text-[#d4d5d8]"> · {current.content}</span>
           </p>
         </div>
 
         <button
+          type="button"
           onClick={() => setDismissed(true)}
-          className="text-slate-400 hover:text-white p-1 rounded-md transition-colors flex-shrink-0"
-          aria-label="Dismiss banner"
+          className="shrink-0 w-11 h-10 flex items-center justify-center text-white hover:bg-[#26272b] transition-colors"
+          aria-label="Dismiss announcement"
         >
-          <X className="w-3.5 h-3.5" />
+          <X className="w-4 h-4" aria-hidden="true" />
         </button>
       </div>
     </div>

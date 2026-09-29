@@ -1,40 +1,78 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { 
-  Sparkles, 
-  Menu, 
-  X, 
-  UserCheck, 
-  ShieldCheck, 
-  GraduationCap, 
-  ChevronDown, 
-  ArrowRight,
-  QrCode,
-  Layers,
-  Trophy,
-  CalendarCheck,
-  LogOut
-} from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { ArrowRight, ChevronDown, LayoutDashboard, LogOut, Menu, UserRound, X } from "lucide-react";
+import { LogoMark } from "@/components/Logo";
 import { useAuth } from "@/lib/context/AuthContext";
 import { UserRole } from "@/lib/types";
+import { useStore } from "@/lib/store";
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
-  const { role, quickSwitchRole, isAuthenticated, currentUser, logout } = useAuth();
+  const [signingOut, setSigningOut] = useState(false);
+  const { role, isAuthenticated, currentUser, logout, loading } = useAuth();
+  const { eventConfig } = useStore();
   const pathname = usePathname();
+  const router = useRouter();
 
-  const navLinks = [
-    { name: "Home", href: "/" },
-    { name: "Workshop", href: "/#about" },
-    { name: "Speakers", href: "/#speakers" },
-    { name: "Learn", href: "/#learn" },
-    { name: "Schedule", href: "/#schedule" },
-    { name: "FAQ", href: "/#faq" },
-  ];
+  const handleLogout = async () => {
+    setSigningOut(true);
+    try {
+      await logout();
+      setMobileMenuOpen(false);
+      router.push("/");
+    } finally {
+      setSigningOut(false);
+    }
+  };
+
+  const { permissions } = useAuth();
+  const can = (perm: string) => role === "admin" || permissions.includes(perm as never);
+
+  // Each role sees its own workspace; visitors see the event site.
+  const navLinks: { name: string; href: string }[] =
+    role === "admin"
+      ? [
+          { name: "Console", href: "/admin" },
+          { name: "Participants", href: "/admin/participants" },
+          { name: "Payments", href: "/admin/payments" },
+          { name: "Check-in", href: "/coordinator/checkin" },
+          { name: "Judging", href: "/admin/submissions" },
+          { name: "Certificates", href: "/admin/certificates" },
+        ]
+      : role === "coordinator"
+        ? [
+            { name: "Overview", href: "/coordinator" },
+            ...(can("CHECKIN_MANAGE") ? [{ name: "Check-in", href: "/coordinator/checkin" }] : []),
+            ...(can("REGISTRATION_VERIFY") ? [{ name: "Verify payments", href: "/coordinator/verify" }] : []),
+            ...(can("PARTICIPANT_VIEW") ? [{ name: "Roster", href: "/coordinator/participants" }] : []),
+            ...(can("SUPPORT_VIEW") || can("SUPPORT_REPLY") ? [{ name: "Support", href: "/coordinator/support" }] : []),
+          ]
+        : role === "user"
+          ? [
+              { name: "My ticket", href: "/dashboard" },
+              { name: "Team", href: "/dashboard/team" },
+              { name: "Submission", href: "/dashboard/submission" },
+              { name: "Schedule", href: "/dashboard/schedule" },
+              { name: "Certificate", href: "/dashboard/certificate" },
+              { name: "Rules", href: "/rules" },
+            ]
+          : [
+              { name: "Home", href: "/" },
+              { name: "Workshop", href: "/#about" },
+              { name: "Speakers", href: "/#speakers" },
+              { name: "Schedule", href: "/#schedule" },
+              { name: "Rules", href: "/rules" },
+              { name: "FAQ", href: "/#faq" },
+            ];
+  const isStaff = role === "admin" || role === "coordinator";
+  const inConsole = isStaff && (pathname.startsWith("/admin") || pathname.startsWith("/coordinator"));
+  const navShow = inConsole ? "hidden" : isStaff ? "2xl:flex" : "lg:flex";
+  const menuHide = inConsole || !isStaff ? "lg:hidden" : "2xl:hidden";
+  const isActive = (href: string) =>
+    href === pathname || (!href.includes("#") && href !== "/" && ["/admin", "/coordinator", "/dashboard"].indexOf(href) === -1 && pathname.startsWith(href + "/"));
 
   const getDashboardHref = () => {
     if (role === "admin") return "/admin";
@@ -42,180 +80,202 @@ export default function Navbar() {
     return "/dashboard";
   };
 
-  const getRoleBadge = (r: UserRole) => {
-    if (r === "admin") return { label: "Admin View", icon: ShieldCheck, color: "bg-red-500/20 text-red-300 border-red-500/40" };
-    if (r === "coordinator") return { label: "Coordinator View", icon: QrCode, color: "bg-purple-500/20 text-purple-300 border-purple-500/40" };
-    return { label: "Participant View", icon: GraduationCap, color: "bg-cyan-500/20 text-cyan-300 border-cyan-500/40" };
+  const getRoleLabel = (r: UserRole | null) => {
+    if (r === "admin") return "Admin";
+    if (r === "coordinator") return "Coordinator";
+    return "Participant";
   };
 
-  const activeRoleInfo = getRoleBadge(role);
-  const ActiveIcon = activeRoleInfo.icon;
+  const roleLabel = getRoleLabel(role);
 
   return (
-    <header className="sticky top-0 z-40 w-full backdrop-blur-xl bg-slate-950/85 border-b border-slate-800/80 transition-all">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-4">
-        {/* Logo / Brand */}
-        <Link href="/" className="flex items-center gap-3 group">
-          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-tr from-cyan-600 via-blue-600 to-indigo-600 p-[1.5px] shadow-lg shadow-cyan-500/20 group-hover:shadow-cyan-500/40 transition-all">
-            <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center">
-              <span className="font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 text-sm sm:text-base tracking-tighter">
-                P2P
-              </span>
-            </div>
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-extrabold text-sm sm:text-base tracking-tight text-white group-hover:text-cyan-400 transition-colors">
-                PROMPT TO PRODUCTION
-              </span>
-              <span className="text-[10px] px-1.5 py-0.5 rounded font-bold uppercase bg-blue-500/20 text-blue-400 border border-blue-500/30">
-                Paytm AI
-              </span>
-            </div>
-            <p className="text-[10px] text-slate-400 hidden sm:block truncate max-w-[280px]">
-              NBKRIST IT & AI&DS • In association with ISTE
-            </p>
-          </div>
+    <header className="sticky top-0 z-40 w-full bg-paper rule-b">
+      <div className={`${inConsole ? "max-w-none" : "max-w-[1280px]"} mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-[4.5rem] flex items-center justify-between gap-4`}>
+        {/* Brand lockup */}
+        <Link href="/" className="flex items-center gap-3 min-w-0 group" aria-label="Prompt to Production, home">
+          <LogoMark className="w-10 h-10 sm:w-11 sm:h-11 shrink-0 transition-transform duration-300 group-hover:-rotate-3" />
+          <span className="min-w-0 leading-tight">
+            <span className="block wide font-semibold text-sm sm:text-base tracking-tight text-ink truncate group-hover:underline underline-offset-4 decoration-2">
+              Prompt to Production
+            </span>
+            <span className="block text-xs text-ink-3 truncate">
+              NBKRIST × ISTE × <span className="font-bold"><span className="text-paytm">Pay</span><span className="text-paytm-sky">tm</span></span>
+            </span>
+          </span>
         </Link>
 
-        {/* Desktop Navigation Links */}
-        <nav className="hidden lg:flex items-center gap-1 xl:gap-2">
+        {/* Desktop rail */}
+        <nav className={`hidden ${navShow} items-stretch self-stretch`} aria-label="Main">
           {navLinks.map((link) => (
             <Link
               key={link.name}
               href={link.href}
-              className={`px-3 py-1.5 text-xs xl:text-sm font-medium rounded-lg transition-all ${
-                pathname === link.href
-                  ? "text-cyan-400 bg-cyan-950/40 border border-cyan-500/30 shadow-sm"
-                  : "text-slate-300 hover:text-white hover:bg-slate-900"
-              }`}
+              aria-current={isActive(link.href) ? "page" : undefined}
+              className="rail-item h-full"
             >
               {link.name}
             </Link>
           ))}
         </nav>
 
-        {/* Right Action / Authentication Buttons */}
-        <div className="flex items-center gap-2">
-          {isAuthenticated ? (
-            <div className="hidden sm:flex items-center gap-2">
-              <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-semibold ${activeRoleInfo.color}`}>
-                <ActiveIcon className="w-3.5 h-3.5" />
-                <span>{currentUser?.name || activeRoleInfo.label}</span>
-              </div>
-              <Link
-                href={getDashboardHref()}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-bold text-xs shadow-md shadow-cyan-500/25 transition-all active:scale-95"
-              >
-                <span>Dashboard</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-              <button
-                onClick={() => logout()}
-                title="Sign Out to Landing Page"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-slate-300 hover:text-rose-300 bg-slate-900 hover:bg-rose-950/40 border border-slate-800 hover:border-rose-500/40 text-xs font-bold transition-all active:scale-95"
-              >
-                <LogOut className="w-3.5 h-3.5 text-rose-400" />
-                <span>Sign Out</span>
-              </button>
-            </div>
+        {/* Actions */}
+        <div className="flex items-center gap-2 shrink-0">
+          {loading ? (
+            <div className="hidden sm:block h-9 w-40 bg-paper-2" aria-hidden="true" />
+          ) : isAuthenticated ? (
+            <AccountMenu
+              name={currentUser?.name || roleLabel}
+              email={currentUser?.email}
+              roleLabel={roleLabel}
+              homeHref={getDashboardHref()}
+              homeLabel={role === "user" ? "My dashboard" : role === "admin" ? "Admin console" : "Coordinator console"}
+              profileHref={role === "user" ? "/dashboard/profile" : undefined}
+              onSignOut={handleLogout}
+              signingOut={signingOut}
+            />
           ) : (
             <div className="hidden sm:flex items-center gap-2">
-              <Link
-                href="/login"
-                className="px-3.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 hover:text-white font-bold text-xs transition-colors"
-              >
-                Sign In
+              <Link href="/login" className="btn btn-sm">
+                Sign in
               </Link>
-              <Link
-                href="/register"
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-bold text-xs shadow-md shadow-cyan-500/25 transition-all active:scale-95"
-              >
-                <span>Register (₹50/₹100)</span>
-                <ArrowRight className="w-3.5 h-3.5" />
+              <Link href="/register" className="btn btn-primary btn-sm">
+                Register
+                <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
               </Link>
             </div>
           )}
 
-          {/* Mobile hamburger */}
           <button
+            type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="lg:hidden p-2 rounded-xl text-slate-300 hover:text-white bg-slate-900 border border-slate-800 focus:outline-none flex items-center gap-1.5"
-            aria-label="Toggle menu"
+            className={`${menuHide} btn w-11 !px-0`}
+            aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={mobileMenuOpen}
+            aria-controls="mobile-drawer"
           >
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
         </div>
       </div>
 
-      {/* Mobile Drawer */}
+      {/* Mobile drawer: a white plane under the bar */}
       {mobileMenuOpen && (
-        <div className="lg:hidden bg-slate-950/98 border-b border-slate-800 px-4 pt-3 pb-6 space-y-4 backdrop-blur-2xl animate-in slide-in-from-top-4 duration-200 max-h-[85vh] overflow-y-auto">
-          {isAuthenticated ? (
-            <div className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-slate-950 font-bold text-xs">
-                    {currentUser?.name?.[0] || "U"}
-                  </div>
-                  <div>
-                    <div className="font-bold text-white text-xs truncate max-w-[150px]">{currentUser?.name || "Participant"}</div>
-                    <div className="text-[10px] text-cyan-400 font-medium uppercase tracking-wider">{role}</div>
-                  </div>
-                </div>
-                <button
-                  onClick={() => {
-                    logout();
-                    setMobileMenuOpen(false);
-                  }}
-                  className="px-2.5 py-1 rounded-lg text-[11px] font-bold text-rose-400 bg-rose-500/10 border border-rose-500/30"
-                >
-                  Sign Out
-                </button>
-              </div>
-
-              <Link
-                href={getDashboardHref()}
-                onClick={() => setMobileMenuOpen(false)}
-                className="block w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 font-bold text-xs text-center shadow-md shadow-cyan-500/20"
-              >
-                Open Dashboard →
-              </Link>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-2">
-              <Link
-                href="/login"
-                onClick={() => setMobileMenuOpen(false)}
-                className="py-2.5 px-3 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 hover:text-white font-bold text-xs text-center"
-              >
-                Sign In
-              </Link>
-              <Link
-                href="/register"
-                onClick={() => setMobileMenuOpen(false)}
-                className="py-2.5 px-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 font-bold text-xs text-center shadow-md shadow-cyan-500/20"
-              >
-                Register (₹50/₹100)
-              </Link>
-            </div>
-          )}
-
-          {/* Navigation Links */}
-          <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800/80">
+        <div id="mobile-drawer" className={`${menuHide} absolute inset-x-0 top-full z-50 h-[calc(100dvh-4rem)] overflow-y-auto overscroll-contain bg-paper rule-t pb-10`}>
+          <nav aria-label="Mobile">
             {navLinks.map((link) => (
               <Link
                 key={link.name}
                 href={link.href}
                 onClick={() => setMobileMenuOpen(false)}
-                className="px-3 py-2 text-xs font-medium rounded-lg text-slate-300 hover:text-cyan-400 hover:bg-slate-900 transition-colors"
+                aria-current={isActive(link.href) ? "page" : undefined}
+                className="flex items-center justify-between min-h-12 px-4 sm:px-6 border-b border-rule font-semibold text-ink hover:bg-paper-2 transition-colors aria-[current=page]:font-semibold aria-[current=page]:bg-paper-2"
               >
                 {link.name}
+                <ArrowRight className="w-4 h-4 text-ink-3" aria-hidden="true" />
               </Link>
             ))}
+          </nav>
+
+          <div className="rule-t p-4 sm:px-6">
+            {isAuthenticated ? (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="font-bold text-ink truncate">{currentUser?.name || "Participant"}</div>
+                    <span className="tag tag-info mt-1">{roleLabel}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    disabled={signingOut}
+                    aria-busy={signingOut}
+                    className="btn btn-quiet btn-sm min-h-11"
+                  >
+                    <LogOut className="w-4 h-4" aria-hidden="true" />
+                    Sign out
+                  </button>
+                </div>
+                <Link
+                  href={getDashboardHref()}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="btn btn-navy w-full"
+                >
+                  Open dashboard
+                  <ArrowRight className="w-4 h-4" aria-hidden="true" />
+                </Link>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-2">
+                <Link href="/login" onClick={() => setMobileMenuOpen(false)} className="btn">
+                  Sign in
+                </Link>
+                <Link href="/register" onClick={() => setMobileMenuOpen(false)} className="btn btn-primary">
+                  Register (₹{eventConfig.iste_fee}/₹{eventConfig.non_iste_fee})
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       )}
     </header>
+  );
+}
+
+/** Name button with a dropdown: who you are, where your workspace is, and sign out. */
+function AccountMenu({
+  name, email, roleLabel, homeHref, homeLabel, profileHref, onSignOut, signingOut,
+}: {
+  name: string; email?: string; roleLabel: string; homeHref: string; homeLabel: string;
+  profileHref?: string; onSignOut: () => void; signingOut: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => { if (!ref.current?.contains(e.target as Node)) setOpen(false); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => { document.removeEventListener("mousedown", onDown); document.removeEventListener("keydown", onKey); };
+  }, [open]);
+  const words = name.replace(/\(.*?\)/g, "").replace(/^(Sri|Dr|Mr|Mrs|Ms)\.\s*/i, "").split(/[^A-Za-z]+/).filter(Boolean);
+  const initials = ((words[0]?.[0] ?? "?") + (words.length > 1 ? words[words.length - 1][0] : "")).toUpperCase();
+  const item = "flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-ink hover:bg-paper-2 transition-colors";
+  return (
+    <div ref={ref} className="relative hidden sm:block">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        className="flex items-center gap-2.5 rounded-full border border-line bg-paper py-1 pl-1 pr-3 text-sm transition-colors hover:border-ink-3"
+      >
+        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-ink text-xs font-semibold text-white">{initials}</span>
+        <span className="max-w-[11rem] truncate font-medium text-ink">{name}</span>
+        <ChevronDown className={`h-4 w-4 text-ink-3 transition-transform ${open ? "rotate-180" : ""}`} aria-hidden="true" />
+      </button>
+      {open && (
+        <div role="menu" className="absolute right-0 top-full z-50 mt-2 w-72 rounded-2xl border border-line bg-paper p-1.5 shadow-[0_2px_4px_rgba(17,17,19,0.05),0_20px_44px_-18px_rgba(17,17,19,0.3)]">
+          <div className="px-3 py-2.5">
+            <p className="truncate text-sm font-semibold text-ink">{name}</p>
+            {email && <p className="truncate text-xs text-ink-3">{email}</p>}
+            <span className="tag tag-info mt-2">{roleLabel}</span>
+          </div>
+          <div className="my-1 h-px bg-rule" />
+          <Link role="menuitem" href={homeHref} onClick={() => setOpen(false)} className={item}>
+            <LayoutDashboard className="h-4 w-4 text-ink-3" aria-hidden="true" /> {homeLabel}
+          </Link>
+          {profileHref && (
+            <Link role="menuitem" href={profileHref} onClick={() => setOpen(false)} className={item}>
+              <UserRound className="h-4 w-4 text-ink-3" aria-hidden="true" /> My profile
+            </Link>
+          )}
+          <div className="my-1 h-px bg-rule" />
+          <button role="menuitem" type="button" onClick={() => { setOpen(false); onSignOut(); }} disabled={signingOut} className={`${item} text-alert hover:bg-alert-soft`}>
+            <LogOut className="h-4 w-4" aria-hidden="true" /> {signingOut ? "Signing out…" : "Sign out"}
+          </button>
+        </div>
+      )}
+    </div>
   );
 }

@@ -1,74 +1,75 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { Layers, Users, Trophy } from "lucide-react";
-import { loadStore } from "@/lib/store";
-import { Team } from "@/lib/types";
+import React from "react";
+import { useStore } from "@/lib/store";
+
+const SUB_LABEL: Record<string, { text: string; cls: string }> = {
+  draft: { text: "Draft", cls: "tag-pending" },
+  submitted: { text: "Submitted", cls: "tag-info" },
+  under_review: { text: "Under review", cls: "tag-info" },
+  evaluated: { text: "Evaluated", cls: "tag-ok" },
+};
 
 export default function AdminTeamsPage() {
-  const [teams, setTeams] = useState<Team[]>([]);
-
-  useEffect(() => {
-    const store = loadStore();
-    setTeams(store.teams);
-  }, []);
+  const store = useStore();
+  const teams = store.teams;
+  const maxSize = store.eventConfig.max_team_size;
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl font-black text-white flex items-center gap-2">
-          <Layers className="w-6 h-6 text-red-400" />
-          <span>Hackathon Teams & Roster</span>
-        </h1>
-        <p className="text-xs text-slate-400">
-          Showing {teams.length} registered build teams across college branches.
+      <header className="frame bg-paper p-5 sm:p-6">
+        <h1 className="page-title text-ink">Hackathon Teams &amp; Roster</h1>
+        <p className="mt-2 text-sm text-ink-2">
+          Showing <span className="num font-bold text-ink">{teams.length}</span> registered build teams across
+          college branches.
         </p>
-      </div>
+      </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {teams.map((t) => (
-          <div
-            key={t.id}
-            className="rounded-2xl bg-slate-900 border border-slate-800 p-5 space-y-4 shadow-sm"
-          >
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <div>
-                <span className="text-[10px] text-cyan-400 font-bold uppercase tracking-wider block">
-                  Code: {t.invite_code}
-                </span>
-                <h3 className="font-bold text-white text-base">{t.name}</h3>
-              </div>
-              <span className="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-mono">
-                {t.members.length} / 4 members
-              </span>
-            </div>
-
-            <div className="space-y-2">
-              <span className="text-[10px] font-bold uppercase text-slate-400 block tracking-wider">
-                Roster:
-              </span>
-              {t.members.map((m) => (
-                <div
-                  key={m.id}
-                  className="bg-slate-950 p-2.5 rounded-xl border border-slate-800/80 flex items-center justify-between text-xs"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-white">{m.name}</span>
-                    {m.is_leader && (
-                      <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300">
-                        Lead
-                      </span>
-                    )}
-                  </div>
-                  <span className="font-mono text-[10px] text-slate-400">
-                    {m.roll_number} • {m.branch}
-                  </span>
+      {teams.length === 0 ? (
+        <div className="frame bg-paper p-10 text-center text-sm text-ink-2">No teams have been formed yet.</div>
+      ) : (
+        <div className="planes grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+          {teams.map((t) => (
+            <section key={t.id} className="flex flex-col">
+              <div className="p-5 rule-b flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <h2 className="font-semibold wide text-ink text-lg leading-tight">{t.name}</h2>
+                  <p className="mt-1 text-xs text-ink-2">
+                    Code: <span className="font-mono font-bold text-accent">{t.invite_code}</span>
+                  </p>
                 </div>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
+                <span className="flex flex-col items-end gap-1">
+                  <span className={`tag ${t.members.length >= maxSize ? "tag-ok" : "tag-pending"} num`}>
+                    {t.members.length} / {maxSize} members
+                  </span>
+                  {(() => {
+                    const sub = store.submissions.find((x) => x.team_id === t.id);
+                    const lbl = sub ? SUB_LABEL[sub.status] : undefined;
+                    return lbl ? <span className={`tag ${lbl.cls}`}>{lbl.text}</span> : <span className="tag">No submission</span>;
+                  })()}
+                </span>
+              </div>
+
+              <div className="p-5 space-y-2">
+                <span className="cell-label block">Roster</span>
+                <ul className="divide-y divide-rule border border-rule">
+                  {t.members.map((m) => (
+                    <li key={m.id} className="bg-field-2 px-3 py-2.5 flex flex-wrap items-center justify-between gap-2 text-sm">
+                      <span className="flex items-center gap-2 min-w-0">
+                        <span className="font-bold text-ink">{m.name}</span>
+                        {m.is_leader && <span className="tag tag-info">Lead</span>}
+                      </span>
+                      <span className="font-mono text-xs text-ink-2">
+                        {m.roll_number} / {m.branch}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </section>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

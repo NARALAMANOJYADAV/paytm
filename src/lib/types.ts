@@ -44,7 +44,7 @@ export interface ParticipantProfile {
   roll_number: string;
   year: '1st Year' | '2nd Year' | '3rd Year' | '4th Year';
   branch: 'AI & DS' | 'IT' | 'CSE' | 'ECE' | 'EEE' | 'Mechanical' | 'Civil';
-  section: 'A' | 'B' | 'C' | 'D';
+  section: string; // typed by the student, stored upper-case (e.g. A, B2)
   iste_member: boolean;
   iste_sm_number?: string;
   has_laptop: boolean;
@@ -62,6 +62,11 @@ export interface Registration {
   payment_status: PaymentStatus;
   registration_status: RegistrationStatus;
   utr_number?: string;
+  payment_proof_path?: string;
+  payment_submitted_at?: string;
+  rejection_reason?: string;
+  verified_at?: string;
+  verified_by_name?: string;
   created_at: string;
 }
 
@@ -100,6 +105,7 @@ export interface AttendanceRecord {
   iste_member: boolean;
   checked_in_by: string; // coordinator user id or name
   check_in_time: string;
+  check_in_at?: string;
   status: 'checked_in' | 'absent';
 }
 
@@ -237,4 +243,10 @@ export interface EventConfig {
   non_iste_fee: number;
   max_team_size: number;
   description: string;
+  event_end_at?: string;
+  submission_deadline_at?: string;
+  upi_id?: string;
+  upi_payee_name?: string;
+  support_contact_name?: string;
+  support_whatsapp?: string;
 }
