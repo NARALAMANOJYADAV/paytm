@@ -44,3 +44,4 @@ next-env.d.ts
 /shots/
 supabase/backup-*.json
 .impeccable/questions/
+docs/*.pdf
