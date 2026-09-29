@@ -12,7 +12,7 @@ export async function GET(
     participantName: "Workshop Participant",
     rollNumber: "NBKRIST-STUDENT",
     branch: "IT / AI&DS",
-    venue: "Seminar Hall, New CSE Block, NBKRIST",
+    venue: "Seminar Hall-1, New CSE Block, NBKRIST",
     eventDate: "30 September 2026",
   });
 

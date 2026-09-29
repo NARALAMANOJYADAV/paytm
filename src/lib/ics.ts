@@ -13,7 +13,7 @@ export function generateIcsContent(options?: {
   const title = options?.title || "Prompt to Production – Paytm AI Workshop";
   const description = options?.description || 
     "Prompt to Production – Paytm AI Workshop organized by Department of IT & AI&DS, N.B.K.R. Institute of Science & Technology in association with ISTE.";
-  const location = options?.location || "Seminar Hall, New CSE Block, NBKRIST";
+  const location = options?.location || "Seminar Hall-1, New CSE Block, NBKRIST";
   // Workshop date: 30 September 2026, 9:00 AM to 4:00 PM (IST = UTC+5:30 -> UTC 03:30 to 10:30)
   // In local calendar format: 20260930T090000 / 20260930T160000
   const dtStart = options?.startDate || "20260930T090000";

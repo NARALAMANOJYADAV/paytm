@@ -9,7 +9,7 @@ export async function GET(
   const icsString = generateIcsContent({
     title: "Prompt to Production – Paytm AI Workshop",
     description: `Prompt to Production – Paytm AI Workshop organized by Department of IT & AI&DS, NBKRIST in association with ISTE. Ticket ID: ${ticketId}`,
-    location: "Seminar Hall, New CSE Block, NBKRIST Campus, Vidyanagar",
+    location: "Seminar Hall-1, New CSE Block, NBKRIST Campus, Vidyanagar",
     alarmDescription: "Prompt to Production workshop starts in 30 minutes.",
   });
 

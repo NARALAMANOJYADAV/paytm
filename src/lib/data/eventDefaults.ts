@@ -9,7 +9,7 @@ export const initialEventConfig: EventConfig = {
   date: "2026-09-30",
   date_formatted: "30 September 2026",
   time: "9:00 AM – 4:00 PM",
-  venue: "Seminar Hall, New CSE Block",
+  venue: "Seminar Hall-1, New CSE Block",
   capacity: 100,
   registration_open: true,
   iste_fee: 50,

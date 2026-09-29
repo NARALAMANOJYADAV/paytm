@@ -77,7 +77,7 @@ export default function AdminAttendancePage() {
         <div className="min-w-0">
           <h1 className="page-title text-ink">Gate Attendance &amp; Check-in Audit</h1>
           <p className="mt-2 text-sm text-ink-2">
-            Everyone checked in at the Seminar Hall gate, with time and verifier.
+            Everyone checked in at the Seminar Hall-1 gate, with time and verifier.
           </p>
         </div>
         <button onClick={handleExport} className="btn self-start sm:self-auto">

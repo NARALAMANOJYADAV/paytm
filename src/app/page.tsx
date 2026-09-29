@@ -190,11 +190,11 @@ export default function HomePage() {
     { time: "9:00 – 9:15 AM", title: "Registration and Seating", category: "Check-in", desc: "Desk opens at 8:45 AM. QR badge verification and workshop kit distribution." },
     { time: "9:15 – 9:25 AM", title: "Welcome Address", category: "Inauguration", desc: "Opening remarks by Head of Department, IT & AI&DS, NBKRIST." },
     { time: "9:25 – 9:35 AM", title: "Prompt to Production Introduction", category: "Orientation", desc: "Overview of workshop goals, day agenda, and ISTE collaboration." },
-    { time: "9:35 – 10:50 AM", title: "Expert Session – Mr. Suman Mandal", category: "Keynote 1", desc: "Head of Partnerships & AI Workshops, Paytm. Deep dive into Generative AI in Production (1h 15m virtual masterclass)." },
-    { time: "10:50 – 11:00 AM", title: "Interaction / Q&A", category: "Interactive", desc: "Open floor Q&A with Mr. Suman Mandal on industry practices and career pathways." },
+    { time: "9:35 – 10:50 AM", title: "Expert Session – Mr. Suman Mandal", category: "Keynote 1", desc: "Program Lead, Paytm. AI as a Mentor: Building with Current AI Tools & Technologies and the Right Way to Use AI (1h 15m virtual masterclass)." },
+    { time: "10:50 – 11:00 AM", title: "Interaction / Q&A", category: "Interactive", desc: "Open floor Q&A with Mr. Suman Mandal on industry practices, AI tools, and career pathways." },
     { time: "11:00 – 11:15 AM", title: "Tea Break & Networking", category: "Break", desc: "Refreshments provided in the foyer." },
-    { time: "11:15 AM – 12:30 PM", title: "Expert Session – Mr. Shivam Behl", category: "Keynote 2", desc: "SDE-II at Microsoft. Advanced AI-Assisted Development & Agentic Systems (1h 15m masterclass)." },
-    { time: "12:30 – 12:40 PM", title: "Q&A Session", category: "Interactive", desc: "Direct interactive discussion with Mr. Shivam Behl." },
+    { time: "11:15 AM – 12:30 PM", title: "Expert Session – Mr. Shivam Behl", category: "Keynote 2", desc: "Software Engineer, Microsoft (ex-Zepto, Flipkart). Cracking Tier-1 Tech, Enterprise Production & Career Roadmap for Tier-3 Students (1h 15m masterclass)." },
+    { time: "12:30 – 12:40 PM", title: "Q&A Session", category: "Interactive", desc: "Direct interactive discussion with Mr. Shivam Behl on hiring, enterprise systems, and engineering roadmaps." },
     { time: "12:40 – 1:30 PM", title: "Lunch Break", category: "Dining", desc: "Special lunch provided for all registered participants at New CSE Block dining hall." },
   ];
 
@@ -202,12 +202,12 @@ export default function HomePage() {
     { time: "1:30 – 1:45 PM", title: "Build Challenge Introduction", category: "Hackathon", desc: "Problem statement reveal, judging criteria announcement, and sandbox API distribution." },
     { time: "1:45 – 3:15 PM", title: "Hands-on AI Build", category: "Hackathon", desc: "Intensive 90-minute hands-on build challenge in teams. Faculty and mentors on floor." },
     { time: "3:15 – 3:45 PM", title: "Project Demonstrations & Submissions", category: "Showcase", desc: "Live project demonstrations, testing, and team code repository submissions." },
-    { time: "3:45 – 4:00 PM", title: "Day 1 Wrap-up & Briefing", category: "Wrap-up", desc: "Review of Day 1 code submissions and briefing for next day's Grand Finale." },
+    { time: "3:45 – 4:00 PM", title: "Day 1 Wrap-up & Briefing", category: "Wrap-up", desc: "Review of Day 1 code submissions and briefing for next day's Winner Announcement." },
   ];
 
   const scheduleDay2: ScheduleItem[] = [
-    { time: "10:00 – 11:30 AM", title: "Jury Evaluation", category: "Judging", desc: "Grand jury panel evaluation on Innovation, Prompting, Technical Execution, and Presentation." },
-    { time: "11:30 AM – 12:30 PM", title: "Prize Distribution & Vote of Thanks", category: "Grand Finale", desc: "Awarding winner & runner-up trophies, surprise cash awards, certificates of merit, mementos, and closing remarks." },
+    { time: "10:00 AM", title: "Winners Announcement", category: "Results", desc: "Official announcement of workshop and build challenge winners published in the WhatsApp group." },
+    { time: "12:45 PM", title: "Prize Distribution & Felicitation", category: "Prize Distribution", desc: "Awarding surprise cash awards, certificates of merit, and closing remarks at Principal's Cabin, EEE Block." },
   ];
 
   const scheduleTabs: {
@@ -240,10 +240,10 @@ export default function HomePage() {
     {
       id: "finale",
       day: "Day 2",
-      part: "Finale",
-      heading: "Day 2 (next day): Thursday, 1 October 2026 · 10:00 AM – 12:30 PM",
-      sub: "The Grand Finale · jury evaluation and awards ceremony",
-      count: "Ceremonial finale",
+      part: "Winner Announcement",
+      heading: "Day 2 (next day): Thursday, 1 October 2026 · 10:00 AM & 12:45 PM",
+      sub: "Winners announcement in WhatsApp group & prize distribution at Principal's Cabin, EEE Block",
+      count: "Day 2",
       items: scheduleDay2,
     },
   ];
@@ -263,12 +263,12 @@ export default function HomePage() {
     {
       org: "Paytm",
       name: "Mr. Suman Mandal",
-      role: "Head of Partnerships & AI Workshops, Paytm",
+      role: "Program Lead, Paytm · AI Learning & Campus Initiatives",
       img: "/images/suman_mandal.png",
-      alt: "Mr. Suman Mandal - Head of Partnerships & AI Workshops, Paytm",
-      topic: "Generative AI in Production: Multimodal Architectures, Real-World AI Security & Enterprise Scale",
-      tags: ["Agentic AI", "Computer Vision", "AI Security", "Paytm Platform Ecosystem"],
-      bio: "Leads strategic nationwide developer partnerships and AI workshops at Paytm, driving student and engineer empowerment in Agentic AI, Computer Vision, and production deployment architectures. An accomplished cybersecurity researcher and ethical hacker who has presented at international forums including THREAT CON on ML-driven automated security systems and CAPTCHA bypass mechanisms, with recognized vulnerability disclosures across premier tech platforms.",
+      alt: "Mr. Suman Mandal - Program Lead, Paytm",
+      topic: "AI as a Mentor: Building with Current AI Tools & Technologies and the Right Way to Use AI",
+      tags: ["AI as a Mentor", "GenAI Tools", "AI Agents", "Prompt to Production"],
+      bio: "Program Lead at Paytm driving AI Learning, campus initiatives, and user growth. His work spans computer vision, RAG, generative AI, and AI agents, empowering emerging talent and students to build practical applications and leverage modern AI tools responsibly.",
       session: "Day 1 · 9:35 AM – 10:50 AM",
       linkedin: "https://www.linkedin.com/in/suman-mandal-join/",
       navy: true,
@@ -279,9 +279,9 @@ export default function HomePage() {
       role: "Software Development Engineer II (SDE-II), Microsoft",
       img: "/images/shivam_behl.png",
       alt: "Mr. Shivam Behl - SDE-II, Microsoft",
-      topic: "Agentic Systems & AI-Assisted Developer Workflows: Scalable Distributed Systems at Microsoft",
-      tags: ["Distributed Systems", "Agentic Workflows", "System Design", "Cloud Infrastructure"],
-      bio: "Software Development Engineer (SDE-II) at Microsoft (TIET alumnus, 2021) building resilient cloud services and high-throughput distributed systems. Specializes in cloud infrastructure, agentic workflows, sentiment analysis, and explainable AI (XAI). A dedicated technical mentor who has empowered thousands of aspiring engineers on Data Structures, Algorithms, scalable System Design, and succeeding in tier-1 product engineering roles.",
+      topic: "Cracking Tier-1 Tech (Microsoft), Enterprise Production & Career Roadmap for Tier-3 Students",
+      tags: ["Tier-1 Tech", "Enterprise Production", "Production vs Scale", "Tier-3 Roadmap"],
+      bio: "Software Development Engineer (SDE-II) at Microsoft with experience across leading tech companies including Microsoft, Zepto, and Flipkart. Spanning global tech and fast-paced startups, he mentors aspiring engineers on cracking tier-1 roles, building enterprise-ready scalable systems, and engineering roadmaps.",
       session: "Day 1 · 11:15 AM – 12:30 PM",
       linkedin: "https://www.linkedin.com/in/shivam1103/",
       navy: false,
@@ -397,7 +397,7 @@ export default function HomePage() {
               </div>
               <div className="bg-paper px-3.5 py-2.5 sm:p-5">
                 <div className="cell-label">Venue</div>
-                <div className="mt-1 sm:mt-1.5 text-[0.9375rem] sm:text-lg lg:text-xl font-semibold leading-tight">Seminar Hall</div>
+                <div className="mt-1 sm:mt-1.5 text-[0.9375rem] sm:text-lg lg:text-xl font-semibold leading-tight">Seminar Hall-1</div>
                 <div className="text-xs sm:text-sm text-ink-2">New CSE Block, NBKRIST</div>
               </div>
               <div className="bg-paper px-3.5 py-2.5 sm:p-5">
@@ -414,7 +414,7 @@ export default function HomePage() {
               </div>
               <div className="bg-paper px-3.5 py-2.5 sm:p-5 flex flex-col justify-between gap-1 sm:gap-3">
                 <div>
-                  <div className="cell-label">Day 2 · <span className="hidden sm:inline">Grand </span>Finale</div>
+                  <div className="cell-label">Day 2 · Winner Announcement</div>
                   <div className="mt-1 text-[0.9375rem] sm:text-sm font-semibold sm:font-bold num max-sm:leading-tight">1 Oct<span className="hidden sm:inline"> 2026</span> · 10:00 AM</div>
                 </div>
                 <a href="#schedule" className="sm:hidden inline-flex items-center gap-1 text-xs font-semibold text-ink underline underline-offset-4 decoration-line">
@@ -491,7 +491,7 @@ export default function HomePage() {
                 <h3 id="poster-dialog-title" className="truncate text-sm font-semibold text-white sm:text-base">
                   Prompt to Production · Official poster
                 </h3>
-                <p className="hidden truncate text-xs text-white/60 sm:block">Wed, 30 Sep 2026 · 9:00 AM · Seminar Hall, New CSE Block</p>
+                <p className="hidden truncate text-xs text-white/60 sm:block">Wed, 30 Sep 2026 · 9:00 AM · Seminar Hall-1, New CSE Block</p>
               </div>
               <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
                 <a
@@ -645,7 +645,7 @@ export default function HomePage() {
                         <div className="cell-label">Topic</div>
                         <p className="text-[0.9375rem] sm:text-base font-bold leading-snug text-balance">{sp.topic}</p>
                       </div>
-                      <ul className="hidden sm:flex flex-wrap gap-1.5" aria-label="Expertise">
+                      <ul className="flex flex-wrap gap-1.5" aria-label="Expertise">
                         {sp.tags.map(tag => (
                           <li key={tag} className="tag">{tag}</li>
                         ))}
@@ -663,11 +663,6 @@ export default function HomePage() {
                     <Plus className="w-4 h-4 text-ink-2 transition-transform duration-200 group-open:rotate-45" aria-hidden="true" />
                   </summary>
                   <div className="px-4 pb-4 space-y-3">
-                    <ul className="flex flex-wrap gap-1.5" aria-label="Expertise">
-                      {sp.tags.map(tag => (
-                        <li key={tag} className="tag">{tag}</li>
-                      ))}
-                    </ul>
                     <p className="text-sm text-ink-2 leading-relaxed">{sp.bio}</p>
                   </div>
                 </details>
@@ -800,7 +795,7 @@ export default function HomePage() {
             <div className="lg:col-span-8 space-y-2 sm:space-y-3">
               <h2 className={H2}>Event schedule</h2>
               <p className={`${INTRO} max-w-[70ch]`}>
-                Day 1: Wednesday, 30 September 2026 and Day 2 (next day): Thursday, 1 October 2026 · Seminar Hall, New CSE Block
+                Day 1: Wednesday, 30 Sep (Seminar Hall-1, New CSE Block) · Day 2: Thursday, 1 Oct (Principal&apos;s Cabin, EEE Block)
               </p>
             </div>
             <div className="lg:col-span-4 lg:justify-self-end">
@@ -927,7 +922,7 @@ export default function HomePage() {
                   <div className="bg-paper px-4 py-3.5 sm:p-6 space-y-1.5 sm:space-y-2">
                     <h4 className="font-semibold text-[0.9375rem] sm:text-base">Day 1 Wrap-up &amp; Code Freezing</h4>
                     <p className="text-[0.8125rem] sm:text-sm text-ink-2 leading-relaxed">
-                      All team GitHub repositories and working links are registered by 4:00 PM for preliminary scoring before Thursday&apos;s Grand Finale.
+                      All team GitHub repositories and working links are registered by 4:00 PM for preliminary scoring before Thursday&apos;s Winner Announcement.
                     </p>
                   </div>
                 </div>
@@ -938,12 +933,12 @@ export default function HomePage() {
                   <div className="space-y-1.5">
                     <h4 className="font-semibold text-[0.9375rem] sm:text-base">Awards, Cash Prizes &amp; Institutional Felicitation</h4>
                     <p className="text-[0.8125rem] sm:text-sm text-ink-2 leading-relaxed max-w-[72ch]">
-                      Top performing student teams will receive cash prizes, trophies, Paytm developer goodies, and certificates of merit presented by college dignitaries.
+                      Top performing student teams will receive cash prizes and certificates of merit presented by college dignitaries at Principal&apos;s Cabin, EEE Block.
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2 shrink-0">
-                    <span className="tag">Winner trophies</span>
                     <span className="tag">Cash awards</span>
+                    <span className="tag">Certificates of merit</span>
                   </div>
                 </div>
               )}
@@ -968,7 +963,7 @@ export default function HomePage() {
               <div className="space-y-1.5 sm:space-y-2">
                 <h3 className="wide text-lg sm:text-2xl font-semibold">Winner - AI Build Challenge</h3>
                 <p className="text-sm sm:text-base leading-relaxed">
-                  Cash prize, Paytm developer goodies, 1st Place Certificate of Merit, and fast-track mentorship opportunities.
+                  Cash prize, 1st Place Certificate of Merit, and fast-track mentorship opportunities.
                 </p>
               </div>
             </div>
@@ -1049,7 +1044,7 @@ export default function HomePage() {
             <div className="lg:col-span-7 flex flex-col gap-px !bg-line">
               <div className="bg-paper px-5 py-4 sm:p-8 lg:p-10 space-y-3 sm:space-y-5 flex-1">
                 <div className="cell-label">Campus venue</div>
-                <h2 className={H2}>Seminar Hall, New CSE Block</h2>
+                <h2 className={H2}>Seminar Hall-1, New CSE Block</h2>
                 <p className={`${INTRO} max-w-[60ch]`}>
                   Equipped with high-definition projection, multi-directional audio, dedicated charging docks for student laptops, and high-speed campus Wi-Fi network.
                 </p>
@@ -1080,7 +1075,7 @@ export default function HomePage() {
                     Sample ticket · <span className="font-mono normal-case tracking-normal">P2P-2026-00042</span>
                   </div>
                   <p className="text-[0.8125rem] sm:text-sm text-ink-2 leading-relaxed max-w-[56ch]">
-                    After payment your QR ticket is generated with wallet and calendar reminders. Show it at the Seminar Hall entrance.
+                    After payment your QR ticket is generated with wallet and calendar reminders. Show it at the Seminar Hall-1 entrance.
                   </p>
                 </div>
               </div>
