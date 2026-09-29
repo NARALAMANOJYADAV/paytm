@@ -52,8 +52,8 @@ export default function Footer() {
                 {[
                   ["Date", "Wed, 30 Sep 2026"],
                   ["Time", "9:00 AM – 4:00 PM IST"],
-                  ["Venue", "Seminar Hall, New CSE Block"],
-                  ["Finale", "Thu, 1 Oct · 10:00 AM"],
+                  ["Venue", "Seminar Hall-1, New CSE Block"],
+                  ["Day 2", "Thu, 1 Oct · 10:00 AM (Winners Announcement)"],
                 ].map(([k, v]) => (
                   <div key={k}>
                     <dt className={infoLabel}>{k}</dt>
@@ -102,12 +102,12 @@ export default function Footer() {
                 <div>
                   <dt className={infoLabel}>Contact</dt>
                   <dd className="flex flex-col">
-                    <a href="mailto:it_aids@nbkrist.org" className={linkCls}>
-                      it_aids@nbkrist.org
+                    <a href="mailto:23kb1a3037@nbkrist.org" className={linkCls}>
+                      23kb1a3037@nbkrist.org
                       <ArrowUpRight className={arrowCls} aria-hidden="true" />
                     </a>
-                    <a href="tel:+918624228247" className={`${linkCls} num`}>
-                      +91 8624 228247
+                    <a href="tel:+919491803089" className={`${linkCls} num`}>
+                      +91 94918 03089
                       <ArrowUpRight className={arrowCls} aria-hidden="true" />
                     </a>
                   </dd>

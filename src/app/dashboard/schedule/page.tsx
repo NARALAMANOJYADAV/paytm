@@ -9,11 +9,11 @@ export default function SchedulePage() {
     { time: "9:00 – 9:15 AM", title: "Registration and Seating", category: "Check-in", type: "onsite", desc: "Desk opens at 8:45 AM. QR badge verification and workshop kit distribution." },
     { time: "9:15 – 9:25 AM", title: "Welcome Address", category: "Inauguration", type: "keynote", desc: "Opening remarks by Head of Department, IT & AI&DS, NBKRIST." },
     { time: "9:25 – 9:35 AM", title: "Prompt to Production Introduction", category: "Orientation", type: "keynote", desc: "Overview of workshop goals, day agenda, and ISTE collaboration." },
-    { time: "9:35 – 10:50 AM", title: "Expert Session – Mr. Suman Mandal", category: "Keynote 1", type: "virtual", desc: "Head of Partnerships & AI Workshops, Paytm. Deep dive into Generative AI in Production (1h 15m virtual masterclass)." },
-    { time: "10:50 – 11:00 AM", title: "Interaction / Q&A", category: "Interactive", type: "virtual", desc: "Open floor Q&A with Mr. Suman Mandal on industry practices and career pathways." },
+    { time: "9:35 – 10:50 AM", title: "Expert Session – Mr. Suman Mandal", category: "Keynote 1", type: "virtual", desc: "Program Lead, Paytm. AI as a Mentor: Building with Current AI Tools & Technologies and the Right Way to Use AI (1h 15m virtual masterclass)." },
+    { time: "10:50 – 11:00 AM", title: "Interaction / Q&A", category: "Interactive", type: "virtual", desc: "Open floor Q&A with Mr. Suman Mandal on industry practices, AI tools, and career pathways." },
     { time: "11:00 – 11:15 AM", title: "Tea Break & Networking", category: "Break", type: "break", desc: "Refreshments provided in the foyer." },
-    { time: "11:15 AM – 12:30 PM", title: "Expert Session – Mr. Shivam Behl", category: "Keynote 2", type: "virtual", desc: "SDE-II at Microsoft. Advanced AI-Assisted Development & Agentic Systems (1h 15m masterclass)." },
-    { time: "12:30 – 12:40 PM", title: "Q&A Session", category: "Interactive", type: "virtual", desc: "Direct interactive discussion with Mr. Shivam Behl." },
+    { time: "11:15 AM – 12:30 PM", title: "Expert Session – Mr. Shivam Behl", category: "Keynote 2", type: "virtual", desc: "Software Engineer, Microsoft (ex-Zepto, Flipkart). Cracking Tier-1 Tech, Enterprise Production & Career Roadmap for Tier-3 Students (1h 15m masterclass)." },
+    { time: "12:30 – 12:40 PM", title: "Q&A Session", category: "Interactive", type: "virtual", desc: "Direct interactive discussion with Mr. Shivam Behl on hiring, enterprise systems, and engineering roadmaps." },
     { time: "12:40 – 1:30 PM", title: "Lunch Break", category: "Dining", type: "lunch", desc: "Special lunch provided for all registered participants at New CSE Block dining hall." },
   ];
 
@@ -21,12 +21,12 @@ export default function SchedulePage() {
     { time: "1:30 – 1:45 PM", title: "Build Challenge Introduction", category: "Hackathon", type: "challenge", desc: "Problem statement reveal, judging criteria announcement, and sandbox API distribution." },
     { time: "1:45 – 3:15 PM", title: "Hands-on AI Build", category: "Hackathon", type: "challenge", desc: "Intensive 90-minute hands-on build challenge in teams. Faculty and mentors on floor." },
     { time: "3:15 – 3:45 PM", title: "Project Demonstrations & Submissions", category: "Showcase", type: "showcase", desc: "Live project demonstrations, testing, and team code repository submissions." },
-    { time: "3:45 – 4:00 PM", title: "Day 1 Wrap-up & Briefing", category: "Wrap-up", type: "onsite", desc: "Review of Day 1 code submissions and briefing for next day's Grand Finale." },
+    { time: "3:45 – 4:00 PM", title: "Day 1 Wrap-up & Briefing", category: "Wrap-up", type: "onsite", desc: "Review of Day 1 code submissions and briefing for next day's Winner Announcement." },
   ];
 
   const day2Items = [
-    { time: "10:00 – 11:30 AM", title: "Jury Evaluation", category: "Judging", type: "judging", desc: "Grand jury panel evaluation on Innovation, Prompting, Technical Execution, and Presentation." },
-    { time: "11:30 AM – 12:30 PM", title: "Prize Distribution & Vote of Thanks", category: "Grand Finale", type: "awards", desc: "Awarding winner & runner-up trophies, surprise cash awards, certificates of merit, mementos, and closing remarks." },
+    { time: "10:00 AM", title: "Winners Announcement", category: "Results", type: "virtual", desc: "Official announcement of workshop and build challenge winners published in the WhatsApp group." },
+    { time: "12:45 PM", title: "Prize Distribution & Felicitation", category: "Prize Distribution", type: "awards", desc: "Awarding surprise cash awards, certificates of merit, and closing remarks at Principal's Cabin, EEE Block." },
   ];
 
   type Item = { time: string; title: string; category: string; type: string; desc: string };
@@ -54,7 +54,7 @@ export default function SchedulePage() {
         <div>
           <h1 className="page-title text-ink">Workshop Agenda &amp; Schedule</h1>
           <p className="text-sm text-ink-2 mt-2">
-            2-Day Event Schedule: Wednesday, 30 Sep &amp; Thursday, 1 Oct 2026 · Seminar Hall, New CSE Block
+            2-Day Event Schedule: Wednesday, 30 Sep (Seminar Hall-1) &amp; Thursday, 1 Oct 2026 (Principal&apos;s Cabin, EEE Block)
           </p>
         </div>
 
@@ -126,8 +126,8 @@ export default function SchedulePage() {
       {/* DAY 2 */}
       <section className="space-y-3" aria-labelledby="day2">
         <div>
-          <h2 id="day2" className="text-xl font-semibold wide text-ink">Day 2 (Next Day): Grand Finale, Jury Evaluation &amp; Awards</h2>
-          <p className="text-sm text-ink-2 num">Thursday, 1 October 2026 · 10:00 AM – 12:30 PM</p>
+          <h2 id="day2" className="text-xl font-semibold wide text-ink">Day 2 (Next Day): Winner Announcement &amp; Prize Distribution</h2>
+          <p className="text-sm text-ink-2 num">Thursday, 1 October 2026 · 10:00 AM &amp; 12:45 PM · Principal&apos;s Cabin, EEE Block</p>
         </div>
 
         <div className="planes grid-cols-1 sm:grid-cols-2">
@@ -147,7 +147,7 @@ export default function SchedulePage() {
                   <Award className="w-4 h-4 text-ink-2" aria-hidden="true" />
                   Official Ceremony
                 </span>
-                <span className="text-ink-2">Seminar Hall</span>
+                <span className="text-ink-2">Principal&apos;s Cabin, EEE Block</span>
               </div>
             </div>
           ))}

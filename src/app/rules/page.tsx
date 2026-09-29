@@ -51,7 +51,7 @@ export default function RulesPage() {
         <>After verification your QR ticket appears on your dashboard. Bring it on your phone or printed, along with your college ID card.</>,
         <>Each ticket admits its holder <strong>once</strong>. A second scan shows the time of the first check-in and is not admitted again.</>,
         <>Tickets are personal and carry a security token. Screenshots of someone else&apos;s ticket, edited codes or unverified registrations are refused at the gate.</>,
-        <>Your attendance is recorded only when a coordinator scans your ticket at the Seminar Hall entrance. Attendance is required for a certificate.</>,
+        <>Your attendance is recorded only when a coordinator scans your ticket at the Seminar Hall-1 entrance. Attendance is required for a certificate.</>,
       ],
     },
     {

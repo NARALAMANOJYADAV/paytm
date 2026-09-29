@@ -75,7 +75,7 @@ export function buildWalletPassData(ticket: {
         {
           key: "venue",
           label: "VENUE",
-          value: "Seminar Hall, New CSE Block"
+          value: "Seminar Hall-1, New CSE Block"
         },
         {
           key: "roll",
