@@ -30,7 +30,7 @@ export default function AdminCertificatesPage() {
   const [revoking, setRevoking] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  const [result, setResult] = useState<{ issued: number; skipped: { registration: string; reason: string }[] } | null>(null);
+  const [result, setResult] = useState<{ issued: number; skipped: { registration: string; reason: string }[]; emailed?: number; emailFailures?: string[]; emailConfigured?: boolean } | null>(null);
 
   // Clock for the lock state; ticks so the button unlocks without a reload once the event ends.
   const [now, setNow] = useState(() => Date.now());
@@ -191,6 +191,10 @@ export default function AdminCertificatesPage() {
               Issued <strong className="num">{result.issued}</strong> new certificate{result.issued === 1 ? "" : "s"}.
               {" "}
               <span className="num">{result.skipped.length}</span> registration{result.skipped.length === 1 ? "" : "s"} skipped.
+              {" "}
+              {result.emailConfigured
+                ? <>Emailed <strong className="num">{result.emailed ?? 0}</strong> student{result.emailed === 1 ? "" : "s"}{result.emailFailures?.length ? <>; <span className="text-alert">{result.emailFailures.length} email(s) failed</span></> : null}.</>
+                : <span className="text-ink-2">Email is not set up, so students see their certificate on their dashboard only.</span>}
             </span>
           </div>
           {result.skipped.length > 0 && (

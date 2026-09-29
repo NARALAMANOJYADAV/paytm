@@ -4,6 +4,7 @@ import { ApiError, dbError } from "./errors";
 import { Caller, clearCallerCache, requirePermission, requireRole } from "./auth";
 import { newCertificateId, newInviteCode, newQrToken } from "./ids";
 import { fmtIST, getEventConfig, verifyCertificate } from "./state";
+import { mailConfigured, sendCertificateEmail } from "./mail";
 import type { CoordinatorPermission } from "@/lib/types";
 
 type P = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -378,6 +379,7 @@ const admin = {
 
     const issued: string[] = [];
     const skipped: { registration: string; reason: string }[] = [];
+    const toEmail: { participantId: string; certificateId: string; type: string }[] = [];
     for (const r of regs as P[]) {
       if (r.registration_status !== "confirmed" || r.payment_status !== "success") {
         skipped.push({ registration: r.registration_number, reason: `payment ${r.payment_status}` });
@@ -394,14 +396,36 @@ const admin = {
       if (rk === 2) wanted.push({ type: "runner_up", rank: "2nd Place" });
       for (const w of wanted) {
         if (existing.has(`${r.id}:${w.type}`)) continue;
+        const certificateId = newCertificateId();
         const res = await db().from("certificates").insert({
-          certificate_id: newCertificateId(), registration_id: r.id, type: w.type, rank: w.rank ?? null, issued_by: me.id,
+          certificate_id: certificateId, registration_id: r.id, type: w.type, rank: w.rank ?? null, issued_by: me.id,
         });
         if (res.error) skipped.push({ registration: r.registration_number, reason: dbError(res.error).message });
-        else issued.push(`${r.registration_number}:${w.type}`);
+        else {
+          issued.push(`${r.registration_number}:${w.type}`);
+          toEmail.push({ participantId: r.participant_id, certificateId, type: w.type });
+        }
       }
     }
-    return { issued: issued.length, skipped };
+    // Email each newly issued certificate (only when SMTP is configured).
+    let emailed = 0;
+    const emailFailures: string[] = [];
+    if (mailConfigured() && toEmail.length) {
+      const profiles = check(await db().from("participant_profiles").select("id,user_id,certificate_name").in("id", toEmail.map((t) => t.participantId))) as P[];
+      const users = check(await db().from("app_users").select("id,email").in("id", profiles.map((p) => p.user_id))) as P[];
+      for (const t of toEmail) {
+        const prof = profiles.find((p) => p.id === t.participantId);
+        const email = users.find((u) => u.id === prof?.user_id)?.email;
+        if (!prof || !email) continue;
+        try {
+          await sendCertificateEmail(email, prof.certificate_name, t.certificateId, t.type);
+          emailed++;
+        } catch (e) {
+          emailFailures.push(`${email}: ${e instanceof Error ? e.message : "send failed"}`);
+        }
+      }
+    }
+    return { issued: issued.length, skipped, emailed, emailFailures, emailConfigured: mailConfigured() };
   },
 
   async revokeCertificate(c: Caller | null, p: P) {

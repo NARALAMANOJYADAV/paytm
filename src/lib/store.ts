@@ -174,7 +174,7 @@ export const scoreSubmission = (
   scores: { innovation: number; ai_prompting: number; tech_execution: number; presentation: number; feedback?: string },
 ) => call("scoreSubmission", { submissionId, ...scores });
 export const issueCertificates = () =>
-  call<{ issued: number; skipped: { registration: string; reason: string }[] }>("issueCertificates");
+  call<{ issued: number; skipped: { registration: string; reason: string }[]; emailed?: number; emailFailures?: string[]; emailConfigured?: boolean }>("issueCertificates");
 export const revokeCertificate = (certificateId: string) => call("revokeCertificate", { certificateId });
 
 // ------------------------------------------------------------------ public
